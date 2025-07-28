@@ -63,7 +63,9 @@ export default {
 				academic: {
 					blue: 'hsl(var(--academic-blue))',
 					navy: 'hsl(var(--academic-navy))',
-					light: 'hsl(var(--academic-light))'
+					light: 'hsl(var(--academic-light))',
+					maroon: 'hsl(var(--academic-maroon))',
+					gold: 'hsl(var(--academic-gold))'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',

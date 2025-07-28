@@ -33,10 +33,10 @@ const LoginForm = () => {
 
   const fillDemoCredentials = (role: 'teacher' | 'student') => {
     if (role === 'teacher') {
-      setEmail('sarah.johnson@college.edu');
+      setEmail('priya.sharma@spit.ac.in');
       setPassword('demo123');
     } else {
-      setEmail('alex.kumar@student.college.edu');
+      setEmail('arjun.kumar@student.spit.ac.in');
       setPassword('demo123');
     }
   };
@@ -45,12 +45,16 @@ const LoginForm = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-academic-light to-academic-blue/10 p-4">
       <Card className="w-full max-w-md shadow-academic">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-gradient-academic rounded-full flex items-center justify-center">
-            <BookOpen className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto">
+            <img 
+              src="/lovable-uploads/0f31024b-b89b-49e8-b740-2ea425995c4e.png" 
+              alt="SPIT Logo" 
+              className="w-20 h-20 mx-auto object-contain mb-2"
+            />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold">Answer Sheet Portal</CardTitle>
-            <CardDescription>Login to access your academic records</CardDescription>
+            <CardTitle className="text-2xl font-bold">SPIT Answer Sheet Portal</CardTitle>
+            <CardDescription className="text-center">Sardar Patel Institute of Technology<br/>Login to access your academic records</CardDescription>
           </div>
         </CardHeader>
         
