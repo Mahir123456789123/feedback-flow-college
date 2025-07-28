@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { BookOpen, GraduationCap } from 'lucide-react';
+import { BookOpen, GraduationCap, Shield } from 'lucide-react';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -14,7 +14,7 @@ const LoginForm = () => {
   const [activeTab, setActiveTab] = useState('student');
   const { login, isLoading } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent, role: 'teacher' | 'student') => {
+  const handleSubmit = async (e: React.FormEvent, role: 'teacher' | 'student' | 'admin') => {
     e.preventDefault();
     
     if (!email || !password) {
@@ -31,9 +31,12 @@ const LoginForm = () => {
     }
   };
 
-  const fillDemoCredentials = (role: 'teacher' | 'student') => {
+  const fillDemoCredentials = (role: 'teacher' | 'student' | 'admin') => {
     if (role === 'teacher') {
       setEmail('priya.sharma@spit.ac.in');
+      setPassword('demo123');
+    } else if (role === 'admin') {
+      setEmail('suresh.menon@spit.ac.in');
       setPassword('demo123');
     } else {
       setEmail('arjun.kumar@student.spit.ac.in');
@@ -60,7 +63,7 @@ const LoginForm = () => {
         
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="student" className="flex items-center gap-2">
                 <GraduationCap className="w-4 h-4" />
                 Student
@@ -68,6 +71,10 @@ const LoginForm = () => {
               <TabsTrigger value="teacher" className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4" />
                 Teacher
+              </TabsTrigger>
+              <TabsTrigger value="admin" className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Admin
               </TabsTrigger>
             </TabsList>
             
@@ -139,6 +146,42 @@ const LoginForm = () => {
                   onClick={() => fillDemoCredentials('teacher')}
                 >
                   Use Demo Teacher Account
+                </Button>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="admin" className="space-y-4 mt-6">
+              <form onSubmit={(e) => handleSubmit(e, 'admin')} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-email">Email</Label>
+                  <Input
+                    id="admin-email"
+                    type="email"
+                    placeholder="admin@spit.ac.in"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">Password</Label>
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Signing in...' : 'Sign in as Admin'}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={() => fillDemoCredentials('admin')}
+                >
+                  Use Demo Admin Account
                 </Button>
               </form>
             </TabsContent>

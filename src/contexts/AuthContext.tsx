@@ -32,6 +32,13 @@ const mockUsers: User[] = [
     email: 'kavya.shah@student.spit.ac.in',
     role: 'student',
     department: 'Information Technology'
+  },
+  {
+    id: 'admin1',
+    name: 'Mr. Suresh Menon',
+    email: 'suresh.menon@spit.ac.in',
+    role: 'admin',
+    department: 'Administration'
   }
 ];
 
@@ -47,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (email: string, password: string, role: 'teacher' | 'student'): Promise<boolean> => {
+  const login = async (email: string, password: string, role: 'teacher' | 'student' | 'admin'): Promise<boolean> => {
     setIsLoading(true);
     
     // Simulate API call delay

@@ -2,7 +2,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'teacher' | 'student';
+  role: 'teacher' | 'student' | 'admin';
   department?: string;
 }
 
@@ -49,7 +49,7 @@ export interface Grievance {
 
 export interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string, role: 'teacher' | 'student') => Promise<boolean>;
+  login: (email: string, password: string, role: 'teacher' | 'student' | 'admin') => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
 }

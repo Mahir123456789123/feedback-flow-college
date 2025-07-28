@@ -3,6 +3,7 @@ import LoginForm from '@/components/LoginForm';
 import Header from '@/components/Header';
 import StudentDashboard from '@/components/StudentDashboard';
 import TeacherDashboard from '@/components/TeacherDashboard';
+import AdminDashboard from '@/components/AdminDashboard';
 
 const Index = () => {
   const { user } = useAuth();
@@ -15,7 +16,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main>
-        {user.role === 'student' ? <StudentDashboard /> : <TeacherDashboard />}
+        {user.role === 'student' ? <StudentDashboard /> : user.role === 'teacher' ? <TeacherDashboard /> : <AdminDashboard />}
       </main>
     </div>
   );
