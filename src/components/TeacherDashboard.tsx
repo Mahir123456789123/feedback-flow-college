@@ -16,6 +16,7 @@ import { Grievance } from '@/types';
 const TeacherDashboard = () => {
   const { user } = useAuth();
   const [responseText, setResponseText] = useState('');
+  const [updatedMarks, setUpdatedMarks] = useState('');
   const [grievances, setGrievances] = useState<Grievance[]>(
     mockGrievances.filter(grievance => grievance.teacherId === user?.id)
   );
@@ -54,6 +55,11 @@ const TeacherDashboard = () => {
       return;
     }
 
+    if (action === 'approve' && !updatedMarks.trim()) {
+      toast.error('Please provide updated marks');
+      return;
+    }
+
     // Update the grievance status and response
     setGrievances(prev => prev.map(grievance => 
       grievance.id === grievanceId 
@@ -61,13 +67,15 @@ const TeacherDashboard = () => {
             ...grievance,
             status: action === 'approve' ? 'resolved' : 'rejected',
             teacherResponse: responseText,
-            responseDate: new Date()
+            responseDate: new Date(),
+            ...(action === 'approve' && { updatedMarks: parseInt(updatedMarks) })
           }
         : grievance
     ));
 
     toast.success(`Grievance ${action}ed successfully!`);
     setResponseText('');
+    setUpdatedMarks('');
   };
 
   const getStatusIcon = (status: string) => {
@@ -260,22 +268,44 @@ const TeacherDashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <p className="text-sm font-medium text-muted-foreground">Current Marks</p>
+                      <p className="text-lg font-bold text-primary">{grievance.currentMarks}</p>
+                    </div>
+                    {grievance.updatedMarks && (
+                      <div className="bg-success/10 p-3 rounded-lg border border-success/20">
+                        <p className="text-sm font-medium text-success">Updated Marks</p>
+                        <p className="text-lg font-bold text-success">{grievance.updatedMarks}</p>
+                      </div>
+                    )}
+                  </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Student's Grievance:</p>
                     <p className="text-sm mt-1 bg-muted/50 p-3 rounded-lg">{grievance.grievanceText}</p>
                   </div>
                   
                   {grievance.status === 'pending' && (
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <Label>Your Response</Label>
-                        <Textarea
-                          placeholder="Provide your response to this grievance..."
-                          value={responseText}
-                          onChange={(e) => setResponseText(e.target.value)}
-                          className="min-h-20"
-                        />
-                      </div>
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label>Your Response</Label>
+                          <Textarea
+                            placeholder="Provide your response to this grievance..."
+                            value={responseText}
+                            onChange={(e) => setResponseText(e.target.value)}
+                            className="min-h-20"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Updated Marks (if approving)</Label>
+                          <input
+                            type="number"
+                            className="w-full p-2 border border-input rounded-md bg-background"
+                            placeholder="Enter new marks"
+                            value={updatedMarks}
+                            onChange={(e) => setUpdatedMarks(e.target.value)}
+                          />
+                        </div>
                       <div className="flex gap-2">
                         <Button 
                           onClick={() => handleGrievanceResponse(grievance.id, 'approve')}
@@ -300,6 +330,11 @@ const TeacherDashboard = () => {
                     <div className="bg-primary/5 p-3 rounded-lg">
                       <p className="text-sm font-medium text-muted-foreground">Your Response:</p>
                       <p className="text-sm mt-1">{grievance.teacherResponse}</p>
+                      {grievance.status === 'resolved' && grievance.updatedMarks && (
+                        <p className="text-sm mt-2 text-success font-medium">
+                          Marks updated from {grievance.currentMarks} to {grievance.updatedMarks}
+                        </p>
+                      )}
                       <p className="text-xs text-muted-foreground mt-2">
                         Responded on: {grievance.responseDate?.toLocaleDateString()}
                       </p>

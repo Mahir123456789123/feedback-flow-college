@@ -17,12 +17,13 @@ const StudentDashboard = () => {
   const [selectedAnswerSheet, setSelectedAnswerSheet] = useState<string>('');
   const [questionNumber, setQuestionNumber] = useState('');
   const [subQuestionNumber, setSubQuestionNumber] = useState('');
+  const [currentMarks, setCurrentMarks] = useState('');
   const [grievances, setGrievances] = useState(mockGrievances.filter(grievance => grievance.studentId === user?.id));
 
   const studentAnswerSheets = mockAnswerSheets.filter(sheet => sheet.studentId === user?.id);
 
   const handleSubmitGrievance = () => {
-    if (!selectedAnswerSheet || !questionNumber || !grievanceText.trim()) {
+    if (!selectedAnswerSheet || !questionNumber || !grievanceText.trim() || !currentMarks) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -43,7 +44,8 @@ const StudentDashboard = () => {
       status: 'pending' as const,
       teacherId: selectedSheet.teacherId,
       teacherName: selectedSheet.teacherName,
-      submissionDate: new Date()
+      submissionDate: new Date(),
+      currentMarks: parseInt(currentMarks)
     };
 
     setGrievances(prev => [newGrievance, ...prev]);
@@ -52,6 +54,7 @@ const StudentDashboard = () => {
     setSelectedAnswerSheet('');
     setQuestionNumber('');
     setSubQuestionNumber('');
+    setCurrentMarks('');
   };
 
   const getStatusIcon = (status: string) => {
@@ -156,6 +159,16 @@ const StudentDashboard = () => {
                       placeholder="e.g., a, b, i, ii"
                       value={subQuestionNumber}
                       onChange={(e) => setSubQuestionNumber(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Current Marks Received</Label>
+                    <input
+                      type="number"
+                      className="w-full p-2 border border-input rounded-md bg-background"
+                      placeholder="Enter marks you received"
+                      value={currentMarks}
+                      onChange={(e) => setCurrentMarks(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">

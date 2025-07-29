@@ -46,6 +46,8 @@ export interface Grievance {
   submissionDate: Date;
   teacherResponse?: string;
   responseDate?: Date;
+  currentMarks: number;
+  updatedMarks?: number;
 }
 
 export interface AuthContextType {

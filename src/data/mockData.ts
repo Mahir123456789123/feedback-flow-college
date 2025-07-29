@@ -62,7 +62,8 @@ export const mockGrievances: Grievance[] = [
     status: 'pending',
     teacherId: 'teacher1',
     teacherName: 'Dr. Kailas Devadkar',
-    submissionDate: new Date('2024-01-16')
+    submissionDate: new Date('2024-01-16'),
+    currentMarks: 6
   },
   {
     id: 'g2',
@@ -77,7 +78,8 @@ export const mockGrievances: Grievance[] = [
     status: 'under_review',
     teacherId: 'teacher1',
     teacherName: 'Dr. Kailas Devadkar',
-    submissionDate: new Date('2024-01-21')
+    submissionDate: new Date('2024-01-21'),
+    currentMarks: 4
   },
   {
     id: 'g3',
@@ -94,7 +96,9 @@ export const mockGrievances: Grievance[] = [
     teacherName: 'Prof. Rajesh Patel',
     submissionDate: new Date('2024-01-19'),
     teacherResponse: 'After reviewing your answer, I agree that your explanation of the OSI model and protocol analysis is comprehensive. Your marks have been updated to reflect the correct score.',
-    responseDate: new Date('2024-01-22')
+    responseDate: new Date('2024-01-22'),
+    currentMarks: 7,
+    updatedMarks: 10
   },
   {
     id: 'g4',
@@ -109,7 +113,8 @@ export const mockGrievances: Grievance[] = [
     status: 'pending',
     teacherId: 'teacher1',
     teacherName: 'Dr. Kailas Devadkar',
-    submissionDate: new Date('2024-01-17')
+    submissionDate: new Date('2024-01-17'),
+    currentMarks: 5
   },
   {
     id: 'g5',
@@ -124,7 +129,8 @@ export const mockGrievances: Grievance[] = [
     status: 'pending',
     teacherId: 'teacher1',
     teacherName: 'Dr. Kailas Devadkar',
-    submissionDate: new Date('2024-01-18')
+    submissionDate: new Date('2024-01-18'),
+    currentMarks: 3
   },
   {
     id: 'g6',
@@ -139,7 +145,8 @@ export const mockGrievances: Grievance[] = [
     status: 'pending',
     teacherId: 'teacher1',
     teacherName: 'Dr. Kailas Devadkar',
-    submissionDate: new Date('2024-01-19')
+    submissionDate: new Date('2024-01-19'),
+    currentMarks: 4
   },
   {
     id: 'g7',
@@ -154,7 +161,8 @@ export const mockGrievances: Grievance[] = [
     status: 'pending',
     teacherId: 'teacher1',
     teacherName: 'Dr. Kailas Devadkar',
-    submissionDate: new Date('2024-01-20')
+    submissionDate: new Date('2024-01-20'),
+    currentMarks: 6
   },
   {
     id: 'g8',
@@ -171,6 +179,8 @@ export const mockGrievances: Grievance[] = [
     teacherName: 'Dr. Kailas Devadkar',
     submissionDate: new Date('2024-01-21'),
     teacherResponse: 'Your solution demonstrates excellent understanding of synchronization concepts. However, the mutex implementation had minor syntax errors which were considered during grading. Marks have been updated accordingly.',
-    responseDate: new Date('2024-01-24')
+    responseDate: new Date('2024-01-24'),
+    currentMarks: 7,
+    updatedMarks: 9
   }
 ];
