@@ -38,6 +38,7 @@ export interface Grievance {
   subject: string;
   examName: string;
   questionNumber: number;
+  subQuestionNumber?: string;
   grievanceText: string;
   status: 'pending' | 'under_review' | 'resolved' | 'rejected';
   teacherId: string;

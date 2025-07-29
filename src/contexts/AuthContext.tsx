@@ -7,8 +7,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const mockUsers: User[] = [
   {
     id: 'teacher1',
-    name: 'Dr. Priya Sharma',
-    email: 'priya.sharma@spit.ac.in',
+    name: 'Dr. Kailas Devadkar',
+    email: 'kailas.devadkar@spit.ac.in',
     role: 'teacher',
     department: 'Computer Engineering'
   },
@@ -21,8 +21,8 @@ const mockUsers: User[] = [
   },
   {
     id: 'student1',
-    name: 'Arjun Kumar',
-    email: 'arjun.kumar@student.spit.ac.in',
+    name: 'Mahir Shah',
+    email: 'mahir.shah@student.spit.ac.in',
     role: 'student',
     department: 'Computer Engineering'
   },
@@ -35,8 +35,8 @@ const mockUsers: User[] = [
   },
   {
     id: 'admin1',
-    name: 'Mr. Suresh Menon',
-    email: 'suresh.menon@spit.ac.in',
+    name: 'Admin',
+    email: 'admin@spit.ac.in',
     role: 'admin',
     department: 'Administration'
   }

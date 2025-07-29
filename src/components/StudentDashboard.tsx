@@ -16,9 +16,10 @@ const StudentDashboard = () => {
   const [grievanceText, setGrievanceText] = useState('');
   const [selectedAnswerSheet, setSelectedAnswerSheet] = useState<string>('');
   const [questionNumber, setQuestionNumber] = useState('');
+  const [subQuestionNumber, setSubQuestionNumber] = useState('');
+  const [grievances, setGrievances] = useState(mockGrievances.filter(grievance => grievance.studentId === user?.id));
 
   const studentAnswerSheets = mockAnswerSheets.filter(sheet => sheet.studentId === user?.id);
-  const studentGrievances = mockGrievances.filter(grievance => grievance.studentId === user?.id);
 
   const handleSubmitGrievance = () => {
     if (!selectedAnswerSheet || !questionNumber || !grievanceText.trim()) {
@@ -26,11 +27,31 @@ const StudentDashboard = () => {
       return;
     }
 
-    // In a real app, this would submit to a backend
+    const selectedSheet = studentAnswerSheets.find(sheet => sheet.id === selectedAnswerSheet);
+    if (!selectedSheet) return;
+
+    const newGrievance = {
+      id: `g${Date.now()}`,
+      studentId: user?.id || '',
+      studentName: user?.name || '',
+      answerSheetId: selectedAnswerSheet,
+      subject: selectedSheet.subject,
+      examName: selectedSheet.examName,
+      questionNumber: parseInt(questionNumber),
+      subQuestionNumber: subQuestionNumber || undefined,
+      grievanceText,
+      status: 'pending' as const,
+      teacherId: selectedSheet.teacherId,
+      teacherName: selectedSheet.teacherName,
+      submissionDate: new Date()
+    };
+
+    setGrievances(prev => [newGrievance, ...prev]);
     toast.success('Grievance submitted successfully! Your teacher will review it soon.');
     setGrievanceText('');
     setSelectedAnswerSheet('');
     setQuestionNumber('');
+    setSubQuestionNumber('');
   };
 
   const getStatusIcon = (status: string) => {
@@ -128,6 +149,16 @@ const StudentDashboard = () => {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label>Sub-question (Optional)</Label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border border-input rounded-md bg-background"
+                      placeholder="e.g., a, b, i, ii"
+                      value={subQuestionNumber}
+                      onChange={(e) => setSubQuestionNumber(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label>Grievance Details</Label>
                     <Textarea
                       placeholder="Explain why you believe your answer deserves reconsideration..."
@@ -178,13 +209,16 @@ const StudentDashboard = () => {
           <h2 className="text-xl font-semibold">Your Grievances</h2>
           
           <div className="space-y-4">
-            {studentGrievances.map((grievance) => (
+            {grievances.map((grievance) => (
               <Card key={grievance.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg">{grievance.subject}</CardTitle>
-                      <CardDescription>{grievance.examName} - Question {grievance.questionNumber}</CardDescription>
+                      <CardDescription>
+                        {grievance.examName} - Question {grievance.questionNumber}
+                        {grievance.subQuestionNumber && ` (${grievance.subQuestionNumber})`}
+                      </CardDescription>
                     </div>
                     <Badge className={getStatusColor(grievance.status)}>
                       <div className="flex items-center gap-1">
