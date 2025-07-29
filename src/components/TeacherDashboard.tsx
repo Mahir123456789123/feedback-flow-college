@@ -11,10 +11,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { mockAnswerSheets, mockGrievances } from '@/data/mockData';
 import { toast } from 'sonner';
 import { Upload, FileText, MessageSquare, Eye, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Grievance } from '@/types';
 
 const TeacherDashboard = () => {
   const { user } = useAuth();
   const [responseText, setResponseText] = useState('');
+  const [grievances, setGrievances] = useState<Grievance[]>(
+    mockGrievances.filter(grievance => grievance.teacherId === user?.id)
+  );
   const [uploadForm, setUploadForm] = useState({
     studentName: '',
     subject: '',
@@ -25,7 +29,6 @@ const TeacherDashboard = () => {
   });
 
   const teacherAnswerSheets = mockAnswerSheets.filter(sheet => sheet.teacherId === user?.id);
-  const teacherGrievances = mockGrievances.filter(grievance => grievance.teacherId === user?.id);
 
   const handleUploadAnswerSheet = () => {
     if (!uploadForm.studentName || !uploadForm.subject || !uploadForm.examName || !uploadForm.totalMarks || !uploadForm.obtainedMarks) {
@@ -51,7 +54,18 @@ const TeacherDashboard = () => {
       return;
     }
 
-    // In a real app, this would update the grievance status
+    // Update the grievance status and response
+    setGrievances(prev => prev.map(grievance => 
+      grievance.id === grievanceId 
+        ? {
+            ...grievance,
+            status: action === 'approve' ? 'resolved' : 'rejected',
+            teacherResponse: responseText,
+            responseDate: new Date()
+          }
+        : grievance
+    ));
+
     toast.success(`Grievance ${action}ed successfully!`);
     setResponseText('');
   };
@@ -103,7 +117,7 @@ const TeacherDashboard = () => {
           </TabsTrigger>
           <TabsTrigger value="grievances" className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
-            Grievances ({teacherGrievances.filter(g => g.status === 'pending').length})
+            Grievances ({grievances.filter(g => g.status === 'pending').length})
           </TabsTrigger>
         </TabsList>
 
@@ -227,15 +241,15 @@ const TeacherDashboard = () => {
           <h2 className="text-xl font-semibold">Student Grievances</h2>
           
           <div className="space-y-4">
-            {teacherGrievances.map((grievance) => (
+            {grievances.map((grievance) => (
               <Card key={grievance.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg">{grievance.subject}</CardTitle>
-                      <CardDescription>
-                        {grievance.examName} - Question {grievance.questionNumber} - {grievance.studentName}
-                      </CardDescription>
+                       <CardDescription>
+                         {grievance.examName} - Question {grievance.questionNumber}{grievance.subQuestionNumber && `(${grievance.subQuestionNumber})`} - {grievance.studentName}
+                       </CardDescription>
                     </div>
                     <Badge className={getStatusColor(grievance.status)}>
                       <div className="flex items-center gap-1">
