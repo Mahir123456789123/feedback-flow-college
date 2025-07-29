@@ -33,13 +33,13 @@ const LoginForm = () => {
 
   const fillDemoCredentials = (role: 'teacher' | 'student' | 'admin') => {
     if (role === 'teacher') {
-      setEmail('priya.sharma@spit.ac.in');
+      setEmail('kailas.devadkar@spit.ac.in');
       setPassword('demo123');
     } else if (role === 'admin') {
-      setEmail('suresh.menon@spit.ac.in');
+      setEmail('admin@spit.ac.in');
       setPassword('demo123');
     } else {
-      setEmail('arjun.kumar@student.spit.ac.in');
+      setEmail('mahir.shah@student.spit.ac.in');
       setPassword('demo123');
     }
   };
