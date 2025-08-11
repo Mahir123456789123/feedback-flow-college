@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { mockAnswerSheets, mockGrievances } from '@/data/mockData';
 import AddExamDialog from './AddExamDialog';
+import UploadAnswerSheetDialog from './UploadAnswerSheetDialog';
 import { 
   Users, 
   FileText, 
@@ -23,7 +25,8 @@ import {
   Settings,
   BarChart3,
   BookOpen,
-  Calendar
+  Calendar,
+  Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -31,6 +34,7 @@ const AdminDashboard = () => {
   const { user } = useAuth();
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isAddExamDialogOpen, setIsAddExamDialogOpen] = useState(false);
+  const [isUploadAnswerSheetDialogOpen, setIsUploadAnswerSheetDialogOpen] = useState(false);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -404,8 +408,20 @@ const AdminDashboard = () => {
         <TabsContent value="answer-sheets" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>All Answer Sheets</CardTitle>
-              <CardDescription>Complete list of uploaded answer sheets</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>All Answer Sheets</CardTitle>
+                  <CardDescription>Complete list of uploaded answer sheets</CardDescription>
+                </div>
+                <UploadAnswerSheetDialog
+                  isOpen={isUploadAnswerSheetDialogOpen}
+                  onOpenChange={setIsUploadAnswerSheetDialogOpen}
+                />
+                <Button onClick={() => setIsUploadAnswerSheetDialogOpen(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Answer Sheet
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
