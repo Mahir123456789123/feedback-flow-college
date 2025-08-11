@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   name: string;
@@ -48,6 +49,28 @@ export interface Grievance {
   responseDate?: Date;
   currentMarks: number;
   updatedMarks?: number;
+}
+
+export interface Exam {
+  id: string;
+  name: string;
+  subject: string;
+  department: string;
+  semester: string;
+  date: Date;
+  duration: number; // in minutes
+  totalMarks: number;
+  questionPaperUrl?: string;
+  assignedTeachers: ExamTeacherAssignment[];
+  createdAt: Date;
+  createdBy: string;
+}
+
+export interface ExamTeacherAssignment {
+  teacherId: string;
+  teacherName: string;
+  assignedQuestions: number[];
+  marksPerQuestion: Record<number, number>;
 }
 
 export interface AuthContextType {
