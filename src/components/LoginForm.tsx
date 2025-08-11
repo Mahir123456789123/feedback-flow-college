@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { BookOpen, GraduationCap, Shield } from 'lucide-react';
+import { BookOpen, GraduationCap, Shield, ShieldCheck } from 'lucide-react';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -14,7 +14,7 @@ const LoginForm = () => {
   const [activeTab, setActiveTab] = useState('student');
   const { login, isLoading } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent, role: 'teacher' | 'student' | 'admin') => {
+  const handleSubmit = async (e: React.FormEvent, role: 'teacher' | 'student' | 'admin' | 'controller') => {
     e.preventDefault();
     
     if (!email || !password) {
@@ -31,12 +31,15 @@ const LoginForm = () => {
     }
   };
 
-  const fillDemoCredentials = (role: 'teacher' | 'student' | 'admin') => {
+  const fillDemoCredentials = (role: 'teacher' | 'student' | 'admin' | 'controller') => {
     if (role === 'teacher') {
       setEmail('kailas.devadkar@spit.ac.in');
       setPassword('demo123');
     } else if (role === 'admin') {
       setEmail('admin@spit.ac.in');
+      setPassword('demo123');
+    } else if (role === 'controller') {
+      setEmail('controller@spit.ac.in');
       setPassword('demo123');
     } else {
       setEmail('mahir.shah@student.spit.ac.in');
@@ -63,7 +66,7 @@ const LoginForm = () => {
         
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="student" className="flex items-center gap-2">
                 <GraduationCap className="w-4 h-4" />
                 Student
@@ -75,6 +78,10 @@ const LoginForm = () => {
               <TabsTrigger value="admin" className="flex items-center gap-2">
                 <Shield className="w-4 h-4" />
                 Admin
+              </TabsTrigger>
+              <TabsTrigger value="controller" className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4" />
+                Controller
               </TabsTrigger>
             </TabsList>
             
@@ -182,6 +189,42 @@ const LoginForm = () => {
                   onClick={() => fillDemoCredentials('admin')}
                 >
                   Use Demo Admin Account
+                </Button>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="controller" className="space-y-4 mt-6">
+              <form onSubmit={(e) => handleSubmit(e, 'controller')} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="controller-email">Email</Label>
+                  <Input
+                    id="controller-email"
+                    type="email"
+                    placeholder="controller@spit.ac.in"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="controller-password">Password</Label>
+                  <Input
+                    id="controller-password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Signing in...' : 'Sign in as Controller'}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={() => fillDemoCredentials('controller')}
+                >
+                  Use Demo Controller Account
                 </Button>
               </form>
             </TabsContent>

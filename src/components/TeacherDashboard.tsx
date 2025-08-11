@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { mockAnswerSheets, mockGrievances } from '@/data/mockData';
 import { toast } from 'sonner';
-import { Upload, FileText, MessageSquare, Eye, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Upload, FileText, MessageSquare, Eye, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp, BarChart3 } from 'lucide-react';
 import { Grievance } from '@/types';
 
 const TeacherDashboard = () => {
@@ -30,6 +30,16 @@ const TeacherDashboard = () => {
   });
 
   const teacherAnswerSheets = mockAnswerSheets.filter(sheet => sheet.teacherId === user?.id);
+
+  // Global statistics for teachers
+  const totalAnswerSheets = mockAnswerSheets.length;
+  const totalGrievances = mockGrievances.length;
+  const pendingGrievances = mockGrievances.filter(g => g.status === 'pending').length;
+  const resolvedGrievances = mockGrievances.filter(g => g.status === 'resolved').length;
+  const departmentStats = mockAnswerSheets.reduce((acc, sheet) => {
+    acc[sheet.department] = (acc[sheet.department] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   const handleUploadAnswerSheet = () => {
     if (!uploadForm.studentName || !uploadForm.subject || !uploadForm.examName || !uploadForm.totalMarks || !uploadForm.obtainedMarks) {
@@ -126,6 +136,10 @@ const TeacherDashboard = () => {
           <TabsTrigger value="grievances" className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
             Grievances ({grievances.filter(g => g.status === 'pending').length})
+          </TabsTrigger>
+          <TabsTrigger value="statistics" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Statistics
           </TabsTrigger>
         </TabsList>
 
@@ -348,6 +362,95 @@ const TeacherDashboard = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="statistics" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Answer Sheets</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalAnswerSheets}</div>
+                <p className="text-xs text-muted-foreground">Across all departments</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Grievances</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalGrievances}</div>
+                <p className="text-xs text-muted-foreground">{pendingGrievances} pending review</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Resolved Rate</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalGrievances > 0 ? Math.round((resolvedGrievances / totalGrievances) * 100) : 0}%</div>
+                <p className="text-xs text-muted-foreground">{resolvedGrievances} of {totalGrievances} resolved</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Departments</CardTitle>
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{Object.keys(departmentStats).length}</div>
+                <p className="text-xs text-muted-foreground">Currently active</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Department Statistics</CardTitle>
+                <CardDescription>Answer sheets by department</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(departmentStats).map(([dept, count]) => (
+                    <div key={dept} className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{dept}</span>
+                      <Badge variant="secondary">{count} sheets</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Grievances</CardTitle>
+                <CardDescription>Latest grievance submissions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {mockGrievances.slice(0, 5).map((grievance) => (
+                    <div key={grievance.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">{grievance.studentName}</p>
+                        <p className="text-xs text-muted-foreground">{grievance.subject}</p>
+                      </div>
+                      <Badge className={getStatusColor(grievance.status)}>
+                        <div className="flex items-center gap-1">
+                          {getStatusIcon(grievance.status)}
+                          <span className="ml-1 capitalize">{grievance.status.replace('_', ' ')}</span>
+                        </div>
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
