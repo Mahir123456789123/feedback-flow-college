@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { mockAnswerSheets, mockGrievances } from '@/data/mockData';
 import AddExamDialog from './AddExamDialog';
 import UploadAnswerSheetDialog from './UploadAnswerSheetDialog';
+import ExamEnrollmentDialog from './ExamEnrollmentDialog';
 import { 
   Users, 
   FileText, 
@@ -26,7 +27,8 @@ import {
   BarChart3,
   BookOpen,
   Calendar,
-  Upload
+  Upload,
+  Users2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -35,6 +37,7 @@ const AdminDashboard = () => {
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isAddExamDialogOpen, setIsAddExamDialogOpen] = useState(false);
   const [isUploadAnswerSheetDialogOpen, setIsUploadAnswerSheetDialogOpen] = useState(false);
+  const [isExamEnrollmentDialogOpen, setIsExamEnrollmentDialogOpen] = useState(false);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -107,6 +110,14 @@ const AdminDashboard = () => {
             isOpen={isAddExamDialogOpen}
             onOpenChange={setIsAddExamDialogOpen}
           />
+          <ExamEnrollmentDialog
+            isOpen={isExamEnrollmentDialogOpen}
+            onOpenChange={setIsExamEnrollmentDialogOpen}
+          />
+          <Button onClick={() => setIsExamEnrollmentDialogOpen(true)}>
+            <Users2 className="h-4 w-4 mr-2" />
+            Manage Enrollment
+          </Button>
           <Button onClick={() => setIsAddExamDialogOpen(true)}>
             <BookOpen className="h-4 w-4 mr-2" />
             Add Exam
