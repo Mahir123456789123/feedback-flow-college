@@ -1,4 +1,4 @@
-import { AnswerSheet, Grievance } from '@/types';
+import { AnswerSheet, Grievance, Exam, User } from '@/types';
 
 export const mockAnswerSheets: AnswerSheet[] = [
   {
@@ -45,6 +45,51 @@ export const mockAnswerSheets: AnswerSheet[] = [
     fileUrl: '/mock-answer-sheet-3.pdf',
     semester: 'Semester 5 - AY 2024-25',
     department: 'Information Technology'
+  },
+  {
+    id: 'as4',
+    studentId: 'student3',
+    studentName: 'Ravi Sharma',
+    subject: 'Operating Systems',
+    examName: 'End Semester Examination',
+    totalMarks: 100,
+    obtainedMarks: 0, // Not graded yet
+    teacherId: 'teacher1',
+    teacherName: 'Dr. Kailas Devadkar',
+    uploadDate: new Date('2024-01-15'),
+    fileUrl: '/mock-answer-sheet-4.pdf',
+    semester: 'Semester 3 - AY 2024-25',
+    department: 'Computer Engineering'
+  },
+  {
+    id: 'as5',
+    studentId: 'student4',
+    studentName: 'Anita Verma',
+    subject: 'Operating Systems',
+    examName: 'End Semester Examination',
+    totalMarks: 100,
+    obtainedMarks: 0, // Not graded yet
+    teacherId: 'teacher1',
+    teacherName: 'Dr. Kailas Devadkar',
+    uploadDate: new Date('2024-01-15'),
+    fileUrl: '/mock-answer-sheet-5.pdf',
+    semester: 'Semester 3 - AY 2024-25',
+    department: 'Computer Engineering'
+  },
+  {
+    id: 'as6',
+    studentId: 'student5',
+    studentName: 'Priya Patel',
+    subject: 'Operating Systems',
+    examName: 'End Semester Examination',
+    totalMarks: 100,
+    obtainedMarks: 0, // Not graded yet
+    teacherId: 'teacher1',
+    teacherName: 'Dr. Kailas Devadkar',
+    uploadDate: new Date('2024-01-15'),
+    fileUrl: '/mock-answer-sheet-6.pdf',
+    semester: 'Semester 3 - AY 2024-25',
+    department: 'Computer Engineering'
   }
 ];
 
@@ -182,5 +227,129 @@ export const mockGrievances: Grievance[] = [
     responseDate: new Date('2024-01-24'),
     currentMarks: 7,
     updatedMarks: 9
+  }
+];
+
+export const mockExams: Exam[] = [
+  {
+    id: 'exam1',
+    name: 'End Semester Examination',
+    subject: 'Operating Systems',
+    department: 'Computer Engineering',
+    semester: 'Semester 3 - AY 2024-25',
+    date: new Date('2024-01-15'),
+    duration: 180,
+    totalMarks: 100,
+    questionPaperUrl: '/mock-question-paper-os.pdf',
+    assignedTeachers: [
+      {
+        teacherId: 'teacher1',
+        teacherName: 'Dr. Kailas Devadkar',
+        assignedQuestions: [1, 2, 3],
+        marksPerQuestion: { 1: 15, 2: 20, 3: 15 }
+      }
+    ],
+    createdAt: new Date('2024-01-01'),
+    createdBy: 'admin1'
+  },
+  {
+    id: 'exam2',
+    name: 'University Examination',
+    subject: 'Database Management Systems',
+    department: 'Computer Engineering',
+    semester: 'Semester 3 - AY 2024-25',
+    date: new Date('2024-01-20'),
+    duration: 180,
+    totalMarks: 100,
+    questionPaperUrl: '/mock-question-paper-dbms.pdf',
+    assignedTeachers: [
+      {
+        teacherId: 'teacher1',
+        teacherName: 'Dr. Kailas Devadkar',
+        assignedQuestions: [4, 5, 6],
+        marksPerQuestion: { 4: 25, 5: 15, 6: 10 }
+      }
+    ],
+    createdAt: new Date('2024-01-02'),
+    createdBy: 'admin1'
+  },
+  {
+    id: 'exam3',
+    name: 'Internal Assessment 2',
+    subject: 'Computer Networks',
+    department: 'Information Technology',
+    semester: 'Semester 5 - AY 2024-25',
+    date: new Date('2024-01-18'),
+    duration: 120,
+    totalMarks: 100,
+    questionPaperUrl: '/mock-question-paper-cn.pdf',
+    assignedTeachers: [
+      {
+        teacherId: 'teacher2',
+        teacherName: 'Prof. Rajesh Patel',
+        assignedQuestions: [1, 2, 3, 4, 5],
+        marksPerQuestion: { 1: 20, 2: 20, 3: 20, 4: 20, 5: 20 }
+      }
+    ],
+    createdAt: new Date('2024-01-03'),
+    createdBy: 'admin1'
+  }
+];
+
+export const mockUsers: User[] = [
+  {
+    id: 'teacher1',
+    name: 'Dr. Kailas Devadkar',
+    email: 'kailas.devadkar@example.com',
+    role: 'teacher',
+    department: 'Computer Engineering'
+  },
+  {
+    id: 'teacher2',
+    name: 'Prof. Rajesh Patel',
+    email: 'rajesh.patel@example.com',
+    role: 'teacher',
+    department: 'Information Technology'
+  },
+  {
+    id: 'student1',
+    name: 'Mahir Shah',
+    email: 'mahir.shah@example.com',
+    role: 'student',
+    department: 'Computer Engineering'
+  },
+  {
+    id: 'student2',
+    name: 'Kavya Shah',
+    email: 'kavya.shah@example.com',
+    role: 'student',
+    department: 'Information Technology'
+  },
+  {
+    id: 'student3',
+    name: 'Ravi Sharma',
+    email: 'ravi.sharma@example.com',
+    role: 'student',
+    department: 'Computer Engineering'
+  },
+  {
+    id: 'student4',
+    name: 'Anita Verma',
+    email: 'anita.verma@example.com',
+    role: 'student',
+    department: 'Computer Engineering'
+  },
+  {
+    id: 'student5',
+    name: 'Priya Patel',
+    email: 'priya.patel@example.com',
+    role: 'student',
+    department: 'Computer Engineering'
+  },
+  {
+    id: 'admin1',
+    name: 'Admin User',
+    email: 'admin@example.com',
+    role: 'admin'
   }
 ];

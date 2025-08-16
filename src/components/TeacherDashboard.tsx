@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { mockAnswerSheets, mockGrievances } from '@/data/mockData';
 import { toast } from 'sonner';
 import { Upload, FileText, MessageSquare, Eye, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp, BarChart3 } from 'lucide-react';
+import PaperCheckingInterface from './PaperCheckingInterface';
 import { Grievance } from '@/types';
 
 const TeacherDashboard = () => {
@@ -132,6 +133,10 @@ const TeacherDashboard = () => {
           <TabsTrigger value="answer-sheets" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
             Answer Sheets
+          </TabsTrigger>
+          <TabsTrigger value="paper-checking" className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4" />
+            Paper Checking
           </TabsTrigger>
           <TabsTrigger value="grievances" className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
@@ -257,6 +262,10 @@ const TeacherDashboard = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="paper-checking" className="space-y-4">
+          <PaperCheckingInterface />
         </TabsContent>
 
         <TabsContent value="grievances" className="space-y-4">
