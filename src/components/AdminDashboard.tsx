@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { mockAnswerSheets, mockGrievances } from '@/data/mockData';
 import AddExamDialog from './AddExamDialog';
-import UploadAnswerSheetDialog from './UploadAnswerSheetDialog';
 import ExamEnrollmentDialog from './ExamEnrollmentDialog';
 import { 
   Users, 
@@ -28,22 +26,46 @@ import {
   BookOpen,
   Calendar,
   Upload,
-  Users2
+  Users2,
+  ArrowLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isAddExamDialogOpen, setIsAddExamDialogOpen] = useState(false);
-  const [isUploadAnswerSheetDialogOpen, setIsUploadAnswerSheetDialogOpen] = useState(false);
   const [isExamEnrollmentDialogOpen, setIsExamEnrollmentDialogOpen] = useState(false);
+  const [selectedExamForView, setSelectedExamForView] = useState<string | null>(null);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
     role: 'student' as 'student' | 'teacher',
     department: ''
   });
+
+  // Mock exam data
+  const mockExams = [
+    {
+      id: '1',
+      name: 'End Semester Examination',
+      subject: 'Operating Systems',
+      department: 'Computer Engineering',
+      date: '2024-02-15',
+      duration: '3 hours',
+      assignedTeachers: ['Dr. Devadkar (Q1-3)', 'Prof. Patel (Q4-6)']
+    },
+    {
+      id: '2',
+      name: 'Internal Assessment 2',
+      subject: 'Database Management',
+      department: 'Computer Engineering',
+      date: '2024-02-20',
+      duration: '2 hours',
+      assignedTeachers: ['Dr. Sharma (Q1-4)']
+    }
+  ];
 
   // Statistics
   const totalAnswerSheets = mockAnswerSheets.length;
@@ -56,6 +78,15 @@ const AdminDashboard = () => {
     acc[sheet.department] = (acc[sheet.department] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
+
+  // Pie chart data for analytics
+  const pieChartData = Object.entries(departmentStats).map(([dept, count]) => ({
+    name: dept.replace(' Engineering', ''),
+    value: count,
+    fullName: dept
+  }));
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   const handleAddUser = () => {
     if (!newUser.name || !newUser.email || !newUser.department) {
@@ -98,6 +129,16 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleViewExam = (examId: string) => {
+    setSelectedExamForView(examId);
+  };
+
+  const handleBackToExamsList = () => {
+    setSelectedExamForView(null);
+  };
+
+  const selectedExam = mockExams.find(exam => exam.id === selectedExamForView);
+
   return (
     <div className="container mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between">
@@ -106,22 +147,6 @@ const AdminDashboard = () => {
           <p className="text-muted-foreground">Welcome, {user?.name}</p>
         </div>
         <div className="flex space-x-2">
-          <AddExamDialog
-            isOpen={isAddExamDialogOpen}
-            onOpenChange={setIsAddExamDialogOpen}
-          />
-          <ExamEnrollmentDialog
-            isOpen={isExamEnrollmentDialogOpen}
-            onOpenChange={setIsExamEnrollmentDialogOpen}
-          />
-          <Button onClick={() => setIsExamEnrollmentDialogOpen(true)}>
-            <Users2 className="h-4 w-4 mr-2" />
-            Manage Enrollment
-          </Button>
-          <Button onClick={() => setIsAddExamDialogOpen(true)}>
-            <BookOpen className="h-4 w-4 mr-2" />
-            Add Exam
-          </Button>
           <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -252,7 +277,6 @@ const AdminDashboard = () => {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="exams">Exams</TabsTrigger>
-          <TabsTrigger value="answer-sheets">Answer Sheets</TabsTrigger>
           <TabsTrigger value="grievances">Grievances</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -304,167 +328,191 @@ const AdminDashboard = () => {
         <TabsContent value="exams" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Exam Management</CardTitle>
-              <CardDescription>Manage exams, teacher assignments, and question papers</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Upcoming Exams</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">5</div>
-                      <p className="text-sm text-muted-foreground">Next 30 days</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Active Exams</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">12</div>
-                      <p className="text-sm text-muted-foreground">Currently ongoing</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Completed Exams</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">28</div>
-                      <p className="text-sm text-muted-foreground">This semester</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Exam Name</TableHead>
-                        <TableHead>Subject</TableHead>
-                        <TableHead>Department</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Duration</TableHead>
-                        <TableHead>Assigned Teachers</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell className="font-medium">End Semester Examination</TableCell>
-                        <TableCell>Operating Systems</TableCell>
-                        <TableCell>Computer Engineering</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="h-4 w-4" />
-                            <span>2024-02-15</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>3 hours</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            <Badge variant="secondary" className="text-xs">Dr. Devadkar (Q1-3)</Badge>
-                            <Badge variant="secondary" className="text-xs">Prof. Patel (Q4-6)</Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              View
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              Edit
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Internal Assessment 2</TableCell>
-                        <TableCell>Database Management</TableCell>
-                        <TableCell>Computer Engineering</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="h-4 w-4" />
-                            <span>2024-02-20</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>2 hours</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            <Badge variant="secondary" className="text-xs">Dr. Sharma (Q1-4)</Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              View
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              Edit
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="answer-sheets" className="space-y-4">
-          <Card>
-            <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>All Answer Sheets</CardTitle>
-                  <CardDescription>Complete list of uploaded answer sheets</CardDescription>
+                  <CardTitle>
+                    {selectedExamForView ? (
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleBackToExamsList}
+                        >
+                          <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <span>{selectedExam?.name}</span>
+                      </div>
+                    ) : (
+                      'Exam Management'
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    {selectedExamForView 
+                      ? 'Manage student enrollment and answer sheets' 
+                      : 'Manage exams, teacher assignments, and question papers'
+                    }
+                  </CardDescription>
                 </div>
-                <UploadAnswerSheetDialog
-                  isOpen={isUploadAnswerSheetDialogOpen}
-                  onOpenChange={setIsUploadAnswerSheetDialogOpen}
-                />
-                <Button onClick={() => setIsUploadAnswerSheetDialogOpen(true)}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Answer Sheet
-                </Button>
+                <div className="flex space-x-2">
+                  {selectedExamForView ? (
+                    <>
+                      <ExamEnrollmentDialog
+                        isOpen={isExamEnrollmentDialogOpen}
+                        onOpenChange={setIsExamEnrollmentDialogOpen}
+                        preselectedExamId={selectedExamForView}
+                      />
+                      <Button onClick={() => setIsExamEnrollmentDialogOpen(true)}>
+                        <Users2 className="h-4 w-4 mr-2" />
+                        Manage Enrollment
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <AddExamDialog
+                        isOpen={isAddExamDialogOpen}
+                        onOpenChange={setIsAddExamDialogOpen}
+                      />
+                      <Button onClick={() => setIsAddExamDialogOpen(true)}>
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        Add Exam
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Exam</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Teacher</TableHead>
-                    <TableHead>Marks</TableHead>
-                    <TableHead>Upload Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockAnswerSheets.map((sheet) => (
-                    <TableRow key={sheet.id}>
-                      <TableCell className="font-medium">{sheet.studentName}</TableCell>
-                      <TableCell>{sheet.subject}</TableCell>
-                      <TableCell>{sheet.examName}</TableCell>
-                      <TableCell>{sheet.department}</TableCell>
-                      <TableCell>{sheet.teacherName}</TableCell>
-                      <TableCell>
-                        <Badge variant={sheet.obtainedMarks >= sheet.totalMarks * 0.6 ? "default" : "destructive"}>
-                          {sheet.obtainedMarks}/{sheet.totalMarks}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(sheet.uploadDate).toLocaleDateString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {selectedExamForView && selectedExam ? (
+                <div className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Exam Details</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Subject:</span>
+                          <p>{selectedExam.subject}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium">Department:</span>
+                          <p>{selectedExam.department}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium">Date:</span>
+                          <p>{selectedExam.date}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium">Duration:</span>
+                          <p>{selectedExam.duration}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Assigned Teachers</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedExam.assignedTeachers.map((teacher, index) => (
+                          <Badge key={index} variant="secondary">
+                            {teacher}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg">Upcoming Exams</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">5</div>
+                        <p className="text-sm text-muted-foreground">Next 30 days</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg">Active Exams</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">12</div>
+                        <p className="text-sm text-muted-foreground">Currently ongoing</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg">Completed Exams</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">28</div>
+                        <p className="text-sm text-muted-foreground">This semester</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="border rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Exam Name</TableHead>
+                          <TableHead>Subject</TableHead>
+                          <TableHead>Department</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Duration</TableHead>
+                          <TableHead>Assigned Teachers</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {mockExams.map((exam) => (
+                          <TableRow key={exam.id}>
+                            <TableCell className="font-medium">{exam.name}</TableCell>
+                            <TableCell>{exam.subject}</TableCell>
+                            <TableCell>{exam.department}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <Calendar className="h-4 w-4" />
+                                <span>{exam.date}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{exam.duration}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {exam.assignedTeachers.map((teacher, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {teacher}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleViewExam(exam.id)}
+                                >
+                                  View
+                                </Button>
+                                <Button variant="outline" size="sm">
+                                  Edit
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -519,6 +567,42 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
+                <CardTitle>Department Distribution</CardTitle>
+                <CardDescription>Answer sheets by department</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieChartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {pieChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value, name, props) => [
+                          `${value} sheets`, 
+                          props.payload.fullName
+                        ]}
+                      />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>Performance Analytics</CardTitle>
                 <CardDescription>System performance metrics</CardDescription>
               </CardHeader>
@@ -566,6 +650,33 @@ const AdminDashboard = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Mobile Usage</span>
                     <Badge variant="outline">23%</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Grievance Analytics</CardTitle>
+                <CardDescription>Grievance resolution insights</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Pending Grievances</span>
+                    <Badge variant="secondary">{pendingGrievances}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Resolved This Month</span>
+                    <Badge className="bg-green-100 text-green-800 border-green-200">{resolvedGrievances}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Average Response Time</span>
+                    <Badge variant="outline">1.8 days</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Most Common Issues</span>
+                    <Badge variant="outline">Marking disputes</Badge>
                   </div>
                 </div>
               </CardContent>

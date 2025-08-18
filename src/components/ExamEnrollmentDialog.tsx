@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,6 +15,7 @@ import { toast } from 'sonner';
 interface ExamEnrollmentDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  preselectedExamId?: string;
 }
 
 // Mock data for existing exams
@@ -46,11 +48,18 @@ const mockStudents = [
   { id: '4', name: 'Sarah Wilson', email: 'sarah@example.com', rollNo: 'CE004' }
 ];
 
-const ExamEnrollmentDialog = ({ isOpen, onOpenChange }: ExamEnrollmentDialogProps) => {
+const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamEnrollmentDialogProps) => {
   const [selectedExamId, setSelectedExamId] = useState<string>('');
   const [enrolledStudents, setEnrolledStudents] = useState<typeof mockStudents>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [answerSheetUploads, setAnswerSheetUploads] = useState<Record<string, File>>({});
+
+  // Set preselected exam when dialog opens
+  useEffect(() => {
+    if (isOpen && preselectedExamId) {
+      setSelectedExamId(preselectedExamId);
+    }
+  }, [isOpen, preselectedExamId]);
 
   const selectedExam = mockExams.find(exam => exam.id === selectedExamId);
   const availableStudents = mockStudents.filter(
@@ -133,27 +142,29 @@ const ExamEnrollmentDialog = ({ isOpen, onOpenChange }: ExamEnrollmentDialogProp
         <DialogHeader>
           <DialogTitle>Exam Enrollment Management</DialogTitle>
           <DialogDescription>
-            Select an exam, enroll students, and upload their answer sheets
+            {preselectedExamId ? 'Enroll students and upload their answer sheets for the selected exam' : 'Select an exam, enroll students, and upload their answer sheets'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Exam Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="exam-select">Select Exam</Label>
-            <Select value={selectedExamId} onValueChange={setSelectedExamId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose an existing exam" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockExams.map((exam) => (
-                  <SelectItem key={exam.id} value={exam.id}>
-                    {exam.name} - {exam.subject} ({exam.department})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Exam Selection - only show if no preselected exam */}
+          {!preselectedExamId && (
+            <div className="space-y-2">
+              <Label htmlFor="exam-select">Select Exam</Label>
+              <Select value={selectedExamId} onValueChange={setSelectedExamId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose an existing exam" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockExams.map((exam) => (
+                    <SelectItem key={exam.id} value={exam.id}>
+                      {exam.name} - {exam.subject} ({exam.department})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {selectedExam && (
             <Card>

@@ -10,9 +10,11 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { mockAnswerSheets, mockGrievances } from '@/data/mockData';
 import { toast } from 'sonner';
-import { Upload, FileText, MessageSquare, Eye, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp, BarChart3 } from 'lucide-react';
+import { MessageSquare, Eye, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp, BarChart3, FileText } from 'lucide-react';
 import PaperCheckingInterface from './PaperCheckingInterface';
 import { Grievance } from '@/types';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 const TeacherDashboard = () => {
   const { user } = useAuth();
@@ -119,6 +121,16 @@ const TeacherDashboard = () => {
     }
   };
 
+  // Data for pie chart
+  const chartData = Object.entries(departmentStats).map(([name, value]) => ({ name, value }));
+  const chartConfig = {
+    Computer: { label: "Computer Engineering", color: "hsl(var(--chart-1))" },
+    Civil: { label: "Civil Engineering", color: "hsl(var(--chart-2))" }, 
+    Mechanical: { label: "Mechanical Engineering", color: "hsl(var(--chart-3))" },
+    Electrical: { label: "Electrical Engineering", color: "hsl(var(--chart-4))" },
+    Electronics: { label: "Electronics Engineering", color: "hsl(var(--chart-5))" }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -128,12 +140,8 @@ const TeacherDashboard = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="answer-sheets" className="space-y-4">
+      <Tabs defaultValue="paper-checking" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="answer-sheets" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Answer Sheets
-          </TabsTrigger>
           <TabsTrigger value="paper-checking" className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4" />
             Paper Checking
@@ -148,121 +156,6 @@ const TeacherDashboard = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="answer-sheets" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Uploaded Answer Sheets</h2>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Answer Sheet
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Upload Answer Sheet</DialogTitle>
-                  <DialogDescription>
-                    Upload a corrected answer sheet for a student
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Student Name</Label>
-                    <Input
-                      placeholder="Enter student name"
-                      value={uploadForm.studentName}
-                      onChange={(e) => setUploadForm(prev => ({ ...prev, studentName: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Subject</Label>
-                    <Input
-                      placeholder="Enter subject"
-                      value={uploadForm.subject}
-                      onChange={(e) => setUploadForm(prev => ({ ...prev, subject: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Exam Name</Label>
-                    <Input
-                      placeholder="Enter exam name"
-                      value={uploadForm.examName}
-                      onChange={(e) => setUploadForm(prev => ({ ...prev, examName: e.target.value }))}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Total Marks</Label>
-                      <Input
-                        type="number"
-                        placeholder="100"
-                        value={uploadForm.totalMarks}
-                        onChange={(e) => setUploadForm(prev => ({ ...prev, totalMarks: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Obtained Marks</Label>
-                      <Input
-                        type="number"
-                        placeholder="85"
-                        value={uploadForm.obtainedMarks}
-                        onChange={(e) => setUploadForm(prev => ({ ...prev, obtainedMarks: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Semester</Label>
-                    <Input
-                      placeholder="Fall 2024"
-                      value={uploadForm.semester}
-                      onChange={(e) => setUploadForm(prev => ({ ...prev, semester: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Answer Sheet File</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">Click to upload or drag and drop</p>
-                      <p className="text-xs text-muted-foreground">PDF, JPEG, PNG up to 10MB</p>
-                    </div>
-                  </div>
-                  <Button onClick={handleUploadAnswerSheet} className="w-full">
-                    Upload Answer Sheet
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {teacherAnswerSheets.map((sheet) => (
-              <Card key={sheet.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-lg">{sheet.subject}</CardTitle>
-                  <CardDescription>{sheet.examName}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Student:</span>
-                    <span className="font-semibold">{sheet.studentName}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Score:</span>
-                    <span>{sheet.obtainedMarks}/{sheet.totalMarks}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Date:</span>
-                    <span>{sheet.uploadDate.toLocaleDateString()}</span>
-                  </div>
-                  <Button variant="outline" className="w-full mt-3">
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Details
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
 
         <TabsContent value="paper-checking" className="space-y-4">
           <PaperCheckingInterface />
@@ -438,26 +331,34 @@ const TeacherDashboard = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Recent Grievances</CardTitle>
-                <CardDescription>Latest grievance submissions</CardDescription>
+                <CardTitle>Department Distribution</CardTitle>
+                <CardDescription>Answer sheets by department (pie chart)</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {mockGrievances.slice(0, 5).map((grievance) => (
-                    <div key={grievance.id} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium">{grievance.studentName}</p>
-                        <p className="text-xs text-muted-foreground">{grievance.subject}</p>
-                      </div>
-                      <Badge className={getStatusColor(grievance.status)}>
-                        <div className="flex items-center gap-1">
-                          {getStatusIcon(grievance.status)}
-                          <span className="ml-1 capitalize">{grievance.status.replace('_', ' ')}</span>
-                        </div>
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
+                <ChartContainer config={chartConfig} className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={chartConfig[entry.name as keyof typeof chartConfig]?.color || "#8884d8"}
+                          />
+                        ))}
+                      </Pie>
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
               </CardContent>
             </Card>
           </div>
