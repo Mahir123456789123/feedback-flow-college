@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -360,6 +359,7 @@ const AdminDashboard = () => {
                       <ExamEnrollmentDialog
                         isOpen={isExamEnrollmentDialogOpen}
                         onOpenChange={setIsExamEnrollmentDialogOpen}
+                        preselectedExamId={selectedExamForView}
                       />
                       <Button onClick={() => setIsExamEnrollmentDialogOpen(true)}>
                         <Users2 className="h-4 w-4 mr-2" />
