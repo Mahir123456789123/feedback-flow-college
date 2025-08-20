@@ -143,8 +143,8 @@ const AdminDashboard = () => {
     <div className="container mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">{user?.role === 'controller' ? 'Controller Dashboard' : 'Admin Dashboard'}</h1>
-          <p className="text-muted-foreground">Welcome, {user?.name}</p>
+          <h1 className="text-3xl font-bold text-foreground">{user?.user_metadata?.role === 'controller' ? 'Controller Dashboard' : 'Admin Dashboard'}</h1>
+          <p className="text-muted-foreground">Welcome, {user?.user_metadata?.name || user?.email?.split('@')[0]}</p>
         </div>
         <div className="flex space-x-2">
           <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>

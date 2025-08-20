@@ -4,7 +4,30 @@ import { ModeToggle } from '@/components/mode-toggle';
 import { LogOut, User } from 'lucide-react';
 
 const Header = () => {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
+
+  const getUserName = () => {
+    return user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
+  };
+
+  const getUserRole = () => {
+    if (user?.user_metadata?.role) {
+      return user.user_metadata.role;
+    }
+    // Fallback logic based on email patterns
+    if (user?.email?.includes('admin')) return 'admin';
+    if (user?.email?.includes('controller')) return 'controller';
+    if (user?.email?.includes('teacher') || user?.email?.includes('prof')) return 'teacher';
+    return 'student';
+  };
+
+  const getUserDepartment = () => {
+    return user?.user_metadata?.department || 'Department';
+  };
+
+  const handleLogout = () => {
+    signOut();
+  };
 
   return (
     <header className="bg-card border-b border-border shadow-sm">
@@ -31,11 +54,11 @@ const Header = () => {
                     <User className="w-5 h-5 text-primary-foreground" />
                   </div>
                   <div className="text-sm">
-                    <p className="font-medium text-foreground">{user.name}</p>
-                    <p className="text-muted-foreground capitalize">{user.role} • {user.department}</p>
+                    <p className="font-medium text-foreground">{getUserName()}</p>
+                    <p className="text-muted-foreground capitalize">{getUserRole()} • {getUserDepartment()}</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={logout}>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </Button>

@@ -34,7 +34,7 @@ const StudentDashboard = () => {
     const newGrievance = {
       id: `g${Date.now()}`,
       studentId: user?.id || '',
-      studentName: user?.name || '',
+      studentName: user?.user_metadata?.name || user?.email?.split('@')[0] || '',
       answerSheetId: selectedAnswerSheet,
       subject: selectedSheet.subject,
       examName: selectedSheet.examName,

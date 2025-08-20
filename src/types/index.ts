@@ -1,10 +1,15 @@
 
 export interface User {
   id: string;
-  name: string;
-  email: string;
-  role: 'teacher' | 'student' | 'admin' | 'controller';
+  name?: string;
+  email?: string;
+  role?: 'teacher' | 'student' | 'admin' | 'controller';
   department?: string;
+  user_metadata?: {
+    name?: string;
+    role?: string;
+    department?: string;
+  };
 }
 
 export interface AnswerSheet {
@@ -73,9 +78,4 @@ export interface ExamTeacherAssignment {
   marksPerQuestion: Record<number, number>;
 }
 
-export interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string, role: 'teacher' | 'student' | 'admin' | 'controller') => Promise<boolean>;
-  logout: () => void;
-  isLoading: boolean;
-}
+// Remove the old AuthContextType as it's now defined in AuthContext.tsx
