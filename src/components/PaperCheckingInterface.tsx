@@ -88,7 +88,7 @@ const PaperCheckingInterface = () => {
   const [pageNumber, setPageNumber] = useState(1);
 
   // Mock PDF file URL - in real app this would come from the answer sheet data
-  const pdfFile = '/lovable-uploads/0f31024b-b89b-49e8-b740-2ea425995c4e.png'; // Mock PDF
+  const pdfFile = '/sample-answer-sheet.pdf'; // Sample PDF
 
   // Dynamic marks generation based on max marks
   const generateMarksOptions = (maxMarks: number) => {
@@ -439,23 +439,46 @@ const PaperCheckingInterface = () => {
                 </CardHeader>
                 <CardContent className="p-0">
                   <div 
-                    className="relative min-h-[800px] cursor-crosshair bg-white border"
+                    className="relative cursor-crosshair bg-white border"
                     onClick={handlePdfClick}
                   >
-                    {/* PDF Viewer would go here - using placeholder for now */}
-                    <div className="flex items-center justify-center h-[800px] bg-gradient-to-b from-slate-50 to-slate-100">
-                      <div className="text-center space-y-4">
-                        <FileText className="w-16 h-16 mx-auto text-muted-foreground" />
-                        <div className="space-y-2">
-                          <h3 className="text-lg font-semibold">PDF Answer Sheet</h3>
-                          <p className="text-muted-foreground">
-                            {selectedStudentData?.studentName}'s Answer Sheet
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Click anywhere to add annotations • Scale: {Math.round(pdfScale * 100)}% • Rotation: {pdfRotation}°
-                          </p>
-                        </div>
-                      </div>
+                    {/* PDF Viewer */}
+                    <div className="pdf-viewer-container">
+                      <Document
+                        file={pdfFile}
+                        onLoadSuccess={onDocumentLoadSuccess}
+                        loading={
+                          <div className="flex items-center justify-center h-[800px] bg-gradient-to-b from-slate-50 to-slate-100">
+                            <div className="text-center space-y-4">
+                              <FileText className="w-16 h-16 mx-auto text-muted-foreground animate-pulse" />
+                              <div className="space-y-2">
+                                <h3 className="text-lg font-semibold">Loading PDF...</h3>
+                                <p className="text-muted-foreground">Please wait while the answer sheet loads</p>
+                              </div>
+                            </div>
+                          </div>
+                        }
+                        error={
+                          <div className="flex items-center justify-center h-[800px] bg-gradient-to-b from-red-50 to-red-100">
+                            <div className="text-center space-y-4">
+                              <FileText className="w-16 h-16 mx-auto text-destructive" />
+                              <div className="space-y-2">
+                                <h3 className="text-lg font-semibold">Error Loading PDF</h3>
+                                <p className="text-muted-foreground">Unable to load the answer sheet</p>
+                              </div>
+                            </div>
+                          </div>
+                        }
+                      >
+                        <Page
+                          pageNumber={pageNumber}
+                          scale={pdfScale}
+                          rotate={pdfRotation}
+                          className="mx-auto"
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false}
+                        />
+                      </Document>
                     </div>
                     
                     {/* Render annotations */}
