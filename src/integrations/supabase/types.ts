@@ -7,20 +7,563 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
-      [_ in never]: never
+      answer_sheet_annotations: {
+        Row: {
+          annotation_type: string
+          answer_sheet_id: string
+          color: string | null
+          content: string | null
+          created_at: string
+          created_by: string
+          id: string
+          page_number: number
+          question_id: string | null
+          x_position: number
+          y_position: number
+        }
+        Insert: {
+          annotation_type: string
+          answer_sheet_id: string
+          color?: string | null
+          content?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          page_number: number
+          question_id?: string | null
+          x_position: number
+          y_position: number
+        }
+        Update: {
+          annotation_type?: string
+          answer_sheet_id?: string
+          color?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          page_number?: number
+          question_id?: string | null
+          x_position?: number
+          y_position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_sheet_annotations_answer_sheet_id_fkey"
+            columns: ["answer_sheet_id"]
+            isOneToOne: false
+            referencedRelation: "answer_sheets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answer_sheet_annotations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answer_sheet_annotations_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "answer_sheet_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      answer_sheet_questions: {
+        Row: {
+          answer_sheet_id: string
+          comments: string | null
+          created_at: string
+          graded_at: string | null
+          graded_by: string | null
+          id: string
+          max_marks: number
+          obtained_marks: number | null
+          question_number: number
+          sub_question: string | null
+        }
+        Insert: {
+          answer_sheet_id: string
+          comments?: string | null
+          created_at?: string
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          max_marks: number
+          obtained_marks?: number | null
+          question_number: number
+          sub_question?: string | null
+        }
+        Update: {
+          answer_sheet_id?: string
+          comments?: string | null
+          created_at?: string
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          max_marks?: number
+          obtained_marks?: number | null
+          question_number?: number
+          sub_question?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_sheet_questions_answer_sheet_id_fkey"
+            columns: ["answer_sheet_id"]
+            isOneToOne: false
+            referencedRelation: "answer_sheets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answer_sheet_questions_graded_by_fkey"
+            columns: ["graded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      answer_sheets: {
+        Row: {
+          exam_id: string
+          file_url: string
+          graded_at: string | null
+          graded_by: string | null
+          grading_status: string
+          id: string
+          obtained_marks: number | null
+          remarks: string | null
+          student_id: string
+          total_marks: number | null
+          upload_date: string
+        }
+        Insert: {
+          exam_id: string
+          file_url: string
+          graded_at?: string | null
+          graded_by?: string | null
+          grading_status?: string
+          id?: string
+          obtained_marks?: number | null
+          remarks?: string | null
+          student_id: string
+          total_marks?: number | null
+          upload_date?: string
+        }
+        Update: {
+          exam_id?: string
+          file_url?: string
+          graded_at?: string | null
+          graded_by?: string | null
+          grading_status?: string
+          id?: string
+          obtained_marks?: number | null
+          remarks?: string | null
+          student_id?: string
+          total_marks?: number | null
+          upload_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_sheets_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answer_sheets_graded_by_fkey"
+            columns: ["graded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answer_sheets_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      exam_enrollments: {
+        Row: {
+          enrollment_date: string
+          exam_id: string
+          id: string
+          status: string
+          student_id: string
+        }
+        Insert: {
+          enrollment_date?: string
+          exam_id: string
+          id?: string
+          status?: string
+          student_id: string
+        }
+        Update: {
+          enrollment_date?: string
+          exam_id?: string
+          id?: string
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_enrollments_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exam_teacher_assignments: {
+        Row: {
+          assigned_questions: number[]
+          created_at: string
+          exam_id: string
+          id: string
+          marks_per_question: Json
+          teacher_id: string
+        }
+        Insert: {
+          assigned_questions?: number[]
+          created_at?: string
+          exam_id: string
+          id?: string
+          marks_per_question?: Json
+          teacher_id: string
+        }
+        Update: {
+          assigned_questions?: number[]
+          created_at?: string
+          exam_id?: string
+          id?: string
+          marks_per_question?: Json
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_teacher_assignments_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_teacher_assignments_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exams: {
+        Row: {
+          created_at: string
+          created_by: string
+          duration_minutes: number
+          exam_date: string
+          id: string
+          instructions: string | null
+          name: string
+          question_paper_url: string | null
+          start_time: string
+          status: string
+          subject_id: string
+          total_marks: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          duration_minutes: number
+          exam_date: string
+          id?: string
+          instructions?: string | null
+          name: string
+          question_paper_url?: string | null
+          start_time: string
+          status?: string
+          subject_id: string
+          total_marks?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          duration_minutes?: number
+          exam_date?: string
+          id?: string
+          instructions?: string | null
+          name?: string
+          question_paper_url?: string | null
+          start_time?: string
+          status?: string
+          subject_id?: string
+          total_marks?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exams_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exams_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grievances: {
+        Row: {
+          answer_sheet_id: string
+          current_marks: number
+          expected_marks: number | null
+          grievance_text: string
+          id: string
+          question_number: number
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          student_id: string
+          sub_question: string | null
+          submitted_at: string
+          teacher_response: string | null
+          updated_marks: number | null
+        }
+        Insert: {
+          answer_sheet_id: string
+          current_marks: number
+          expected_marks?: number | null
+          grievance_text: string
+          id?: string
+          question_number: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          student_id: string
+          sub_question?: string | null
+          submitted_at?: string
+          teacher_response?: string | null
+          updated_marks?: number | null
+        }
+        Update: {
+          answer_sheet_id?: string
+          current_marks?: number
+          expected_marks?: number | null
+          grievance_text?: string
+          id?: string
+          question_number?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          student_id?: string
+          sub_question?: string | null
+          submitted_at?: string
+          teacher_response?: string | null
+          updated_marks?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grievances_answer_sheet_id_fkey"
+            columns: ["answer_sheet_id"]
+            isOneToOne: false
+            referencedRelation: "answer_sheets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grievances_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grievances_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          department: string | null
+          email: string
+          id: string
+          name: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          email: string
+          id?: string
+          name: string
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          email?: string
+          id?: string
+          name?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      semesters: {
+        Row: {
+          academic_year: string
+          created_at: string
+          end_date: string
+          id: string
+          is_active: boolean
+          name: string
+          start_date: string
+        }
+        Insert: {
+          academic_year: string
+          created_at?: string
+          end_date: string
+          id?: string
+          is_active?: boolean
+          name: string
+          start_date: string
+        }
+        Update: {
+          academic_year?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          start_date?: string
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          code: string
+          created_at: string
+          credits: number
+          department_id: string
+          id: string
+          name: string
+          semester_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          credits?: number
+          department_id: string
+          id?: string
+          name: string
+          semester_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          credits?: number
+          department_id?: string
+          id?: string
+          name?: string
+          semester_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subjects_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subjects_semester_id_fkey"
+            columns: ["semester_id"]
+            isOneToOne: false
+            referencedRelation: "semesters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_profile: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          department: string | null
+          email: string
+          id: string
+          name: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+      }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
