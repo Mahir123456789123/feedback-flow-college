@@ -547,6 +547,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_active_semester: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          academic_year: string
+          id: string
+          name: string
+        }[]
+      }
       get_current_user_profile: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -563,6 +571,34 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_departments: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          code: string
+          id: string
+          name: string
+        }[]
+      }
+      get_subjects_by_department: {
+        Args: { dept_id?: string }
+        Returns: {
+          code: string
+          credits: number
+          department_name: string
+          id: string
+          name: string
+          semester_name: string
+        }[]
+      }
+      get_teachers_by_department: {
+        Args: { dept_name?: string }
+        Returns: {
+          department: string
+          email: string
+          id: string
+          name: string
+        }[]
       }
     }
     Enums: {

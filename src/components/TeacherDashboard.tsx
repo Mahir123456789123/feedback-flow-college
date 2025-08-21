@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,11 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockAnswerSheets, mockGrievances } from '@/data/mockData';
+import { useAnswerSheets, useGrievances } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
 import { MessageSquare, Eye, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp, BarChart3, FileText } from 'lucide-react';
 import PaperCheckingInterface from './PaperCheckingInterface';
 import { Grievance } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
@@ -20,9 +21,13 @@ const TeacherDashboard = () => {
   const { user } = useAuth();
   const [responseText, setResponseText] = useState('');
   const [updatedMarks, setUpdatedMarks] = useState('');
-  const [grievances, setGrievances] = useState<Grievance[]>(
-    mockGrievances.filter(grievance => grievance.teacherId === user?.id)
-  );
+  
+  // Get current user profile ID
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  // Fetch real data from database
+  const { grievances, updateGrievanceStatus } = useGrievances(currentUserId || undefined, user?.user_metadata?.role);
+  const { answerSheets } = useAnswerSheets(currentUserId || undefined, user?.user_metadata?.role);
   const [uploadForm, setUploadForm] = useState({
     studentName: '',
     subject: '',
@@ -32,15 +37,32 @@ const TeacherDashboard = () => {
     semester: ''
   });
 
-  const teacherAnswerSheets = mockAnswerSheets.filter(sheet => sheet.teacherId === user?.id);
+  // Get current user profile ID
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      if (user?.id) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (data) {
+          setCurrentUserId(data.id);
+        }
+      }
+    };
+    fetchCurrentUser();
+  }, [user?.id]);
 
-  // Global statistics for teachers
-  const totalAnswerSheets = mockAnswerSheets.length;
-  const totalGrievances = mockGrievances.length;
-  const pendingGrievances = mockGrievances.filter(g => g.status === 'pending').length;
-  const resolvedGrievances = mockGrievances.filter(g => g.status === 'resolved').length;
-  const departmentStats = mockAnswerSheets.reduce((acc, sheet) => {
-    acc[sheet.department] = (acc[sheet.department] || 0) + 1;
+  // Statistics
+  const totalAnswerSheets = answerSheets.length;
+  const totalGrievances = grievances.length;
+  const pendingGrievances = grievances.filter(g => g.status === 'pending').length;
+  const resolvedGrievances = grievances.filter(g => g.status === 'resolved').length;
+  const departmentStats = answerSheets.reduce((acc, sheet) => {
+    const deptName = sheet.exam?.subject?.department?.name || 'Unknown';
+    acc[deptName] = (acc[deptName] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -73,20 +95,10 @@ const TeacherDashboard = () => {
       return;
     }
 
-    // Update the grievance status and response
-    setGrievances(prev => prev.map(grievance => 
-      grievance.id === grievanceId 
-        ? {
-            ...grievance,
-            status: action === 'approve' ? 'resolved' : 'rejected',
-            teacherResponse: responseText,
-            responseDate: new Date(),
-            ...(action === 'approve' && { updatedMarks: parseInt(updatedMarks) })
-          }
-        : grievance
-    ));
-
-    toast.success(`Grievance ${action}ed successfully!`);
+    const status = action === 'approve' ? 'resolved' : 'rejected';
+    const marks = action === 'approve' ? parseInt(updatedMarks) : undefined;
+    
+    updateGrievanceStatus(grievanceId, status, responseText, marks);
     setResponseText('');
     setUpdatedMarks('');
   };
@@ -170,9 +182,9 @@ const TeacherDashboard = () => {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-lg">{grievance.subject}</CardTitle>
+                      <CardTitle className="text-lg">{grievance.answer_sheet?.exam?.subject?.name}</CardTitle>
                        <CardDescription>
-                         {grievance.examName} - Question {grievance.questionNumber}{grievance.subQuestionNumber && `(${grievance.subQuestionNumber})`} - {grievance.studentName}
+                         {grievance.answer_sheet?.exam?.name} - Question {grievance.question_number}{grievance.sub_question && `(${grievance.sub_question})`} - {grievance.student?.name}
                        </CardDescription>
                     </div>
                     <Badge className={getStatusColor(grievance.status)}>
@@ -187,18 +199,18 @@ const TeacherDashboard = () => {
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="bg-muted/30 p-3 rounded-lg">
                       <p className="text-sm font-medium text-muted-foreground">Current Marks</p>
-                      <p className="text-lg font-bold text-primary">{grievance.currentMarks}</p>
+                      <p className="text-lg font-bold text-primary">{grievance.current_marks}</p>
                     </div>
-                    {grievance.updatedMarks && (
+                    {grievance.updated_marks && (
                       <div className="bg-success/10 p-3 rounded-lg border border-success/20">
                         <p className="text-sm font-medium text-success">Updated Marks</p>
-                        <p className="text-lg font-bold text-success">{grievance.updatedMarks}</p>
+                        <p className="text-lg font-bold text-success">{grievance.updated_marks}</p>
                       </div>
                     )}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Student's Grievance:</p>
-                    <p className="text-sm mt-1 bg-muted/50 p-3 rounded-lg">{grievance.grievanceText}</p>
+                    <p className="text-sm mt-1 bg-muted/50 p-3 rounded-lg">{grievance.grievance_text}</p>
                   </div>
                   
                   {grievance.status === 'pending' && (
@@ -242,24 +254,24 @@ const TeacherDashboard = () => {
                     </div>
                   )}
                   
-                  {grievance.teacherResponse && (
+                  {grievance.teacher_response && (
                     <div className="bg-primary/5 p-3 rounded-lg">
                       <p className="text-sm font-medium text-muted-foreground">Your Response:</p>
-                      <p className="text-sm mt-1">{grievance.teacherResponse}</p>
-                      {grievance.status === 'resolved' && grievance.updatedMarks && (
+                      <p className="text-sm mt-1">{grievance.teacher_response}</p>
+                      {grievance.status === 'resolved' && grievance.updated_marks && (
                         <p className="text-sm mt-2 text-success font-medium">
-                          Marks updated from {grievance.currentMarks} to {grievance.updatedMarks}
+                          Marks updated from {grievance.current_marks} to {grievance.updated_marks}
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground mt-2">
-                        Responded on: {grievance.responseDate?.toLocaleDateString()}
+                        Responded on: {new Date(grievance.reviewed_at).toLocaleDateString()}
                       </p>
                     </div>
                   )}
                   
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Submitted: {grievance.submissionDate.toLocaleDateString()}</span>
-                    <span>Student: {grievance.studentName}</span>
+                    <span>Submitted: {new Date(grievance.submitted_at).toLocaleDateString()}</span>
+                    <span>Student: {grievance.student?.name}</span>
                   </div>
                 </CardContent>
               </Card>

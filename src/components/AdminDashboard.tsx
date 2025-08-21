@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockAnswerSheets, mockGrievances } from '@/data/mockData';
+import { useDepartments, useTeachers, useExams, useAnswerSheets, useGrievances } from '@/hooks/useDatabase';
 import AddExamDialog from './AddExamDialog';
 import ExamEnrollmentDialog from './ExamEnrollmentDialog';
 import { 
@@ -27,7 +27,8 @@ import {
   Calendar,
   Upload,
   Users2,
-  ArrowLeft
+  ArrowLeft,
+  Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -45,37 +46,22 @@ const AdminDashboard = () => {
     department: ''
   });
 
-  // Mock exam data
-  const mockExams = [
-    {
-      id: '1',
-      name: 'End Semester Examination',
-      subject: 'Operating Systems',
-      department: 'Computer Engineering',
-      date: '2024-02-15',
-      duration: '3 hours',
-      assignedTeachers: ['Dr. Devadkar (Q1-3)', 'Prof. Patel (Q4-6)']
-    },
-    {
-      id: '2',
-      name: 'Internal Assessment 2',
-      subject: 'Database Management',
-      department: 'Computer Engineering',
-      date: '2024-02-20',
-      duration: '2 hours',
-      assignedTeachers: ['Dr. Sharma (Q1-4)']
-    }
-  ];
+  // Fetch real data from database
+  const { departments } = useDepartments();
+  const { exams } = useExams();
+  const { answerSheets } = useAnswerSheets();
+  const { grievances } = useGrievances();
 
   // Statistics
-  const totalAnswerSheets = mockAnswerSheets.length;
-  const totalGrievances = mockGrievances.length;
-  const pendingGrievances = mockGrievances.filter(g => g.status === 'pending').length;
-  const resolvedGrievances = mockGrievances.filter(g => g.status === 'resolved').length;
+  const totalAnswerSheets = answerSheets.length;
+  const totalGrievances = grievances.length;
+  const pendingGrievances = grievances.filter(g => g.status === 'pending').length;
+  const resolvedGrievances = grievances.filter(g => g.status === 'resolved').length;
 
   // Department statistics
-  const departmentStats = mockAnswerSheets.reduce((acc, sheet) => {
-    acc[sheet.department] = (acc[sheet.department] || 0) + 1;
+  const departmentStats = answerSheets.reduce((acc, sheet) => {
+    const deptName = sheet.exam?.subject?.department?.name || 'Unknown';
+    acc[deptName] = (acc[deptName] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -137,7 +123,7 @@ const AdminDashboard = () => {
     setSelectedExamForView(null);
   };
 
-  const selectedExam = mockExams.find(exam => exam.id === selectedExamForView);
+  const selectedExam = exams.find(exam => exam.id === selectedExamForView);
 
   return (
     <div className="container mx-auto p-6 space-y-8">
@@ -200,10 +186,9 @@ const AdminDashboard = () => {
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Computer Engineering">Computer Engineering</SelectItem>
-                      <SelectItem value="Information Technology">Information Technology</SelectItem>
-                      <SelectItem value="Electronics Engineering">Electronics Engineering</SelectItem>
-                      <SelectItem value="Mechanical Engineering">Mechanical Engineering</SelectItem>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -307,11 +292,11 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {mockGrievances.slice(0, 5).map((grievance) => (
+                  {grievances.slice(0, 5).map((grievance) => (
                     <div key={grievance.id} className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium">{grievance.studentName}</p>
-                        <p className="text-xs text-muted-foreground">{grievance.subject}</p>
+                        <p className="text-sm font-medium">{grievance.student?.name}</p>
+                        <p className="text-xs text-muted-foreground">{grievance.answer_sheet?.exam?.subject?.name}</p>
                       </div>
                       <Badge className={getStatusColor(grievance.status)}>
                         {getStatusIcon(grievance.status)}
@@ -392,19 +377,19 @@ const AdminDashboard = () => {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <span className="font-medium">Subject:</span>
-                          <p>{selectedExam.subject}</p>
+                          <p>{selectedExam.subject?.name}</p>
                         </div>
                         <div>
                           <span className="font-medium">Department:</span>
-                          <p>{selectedExam.department}</p>
+                          <p>{selectedExam.subject?.department?.name}</p>
                         </div>
                         <div>
                           <span className="font-medium">Date:</span>
-                          <p>{selectedExam.date}</p>
+                          <p>{new Date(selectedExam.exam_date).toLocaleDateString()}</p>
                         </div>
                         <div>
                           <span className="font-medium">Duration:</span>
-                          <p>{selectedExam.duration}</p>
+                          <p>{selectedExam.duration_minutes} minutes</p>
                         </div>
                       </div>
                     </CardContent>
@@ -416,9 +401,9 @@ const AdminDashboard = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
-                        {selectedExam.assignedTeachers.map((teacher, index) => (
+                        {selectedExam.exam_teacher_assignments?.map((assignment: any, index: number) => (
                           <Badge key={index} variant="secondary">
-                            {teacher}
+                            {assignment.teacher?.name} (Q{assignment.assigned_questions.join(',')})
                           </Badge>
                         ))}
                       </div>
@@ -458,58 +443,47 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="border rounded-lg">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Exam Name</TableHead>
-                          <TableHead>Subject</TableHead>
-                          <TableHead>Department</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Duration</TableHead>
-                          <TableHead>Assigned Teachers</TableHead>
-                          <TableHead>Actions</TableHead>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Exam Name</TableHead>
+                        <TableHead>Subject</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {exams.map((exam) => (
+                        <TableRow key={exam.id}>
+                          <TableCell className="font-medium">{exam.name}</TableCell>
+                          <TableCell>{exam.subject?.name}</TableCell>
+                          <TableCell>{exam.subject?.department?.name}</TableCell>
+                          <TableCell>{new Date(exam.exam_date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{exam.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleViewExam(exam.id)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View Details
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <Settings className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {mockExams.map((exam) => (
-                          <TableRow key={exam.id}>
-                            <TableCell className="font-medium">{exam.name}</TableCell>
-                            <TableCell>{exam.subject}</TableCell>
-                            <TableCell>{exam.department}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Calendar className="h-4 w-4" />
-                                <span>{exam.date}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{exam.duration}</TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {exam.assignedTeachers.map((teacher, index) => (
-                                  <Badge key={index} variant="secondary" className="text-xs">
-                                    {teacher}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex space-x-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleViewExam(exam.id)}
-                                >
-                                  View
-                                </Button>
-                                <Button variant="outline" size="sm">
-                                  Edit
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                      ))}
+                    </TableBody>
+                  </Table>
                   </div>
                 </div>
               )}
@@ -536,28 +510,59 @@ const AdminDashboard = () => {
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {mockGrievances.map((grievance) => (
-                    <TableRow key={grievance.id}>
-                      <TableCell className="font-medium">{grievance.studentName}</TableCell>
-                      <TableCell>{grievance.subject}</TableCell>
-                      <TableCell>Q{grievance.questionNumber}</TableCell>
-                      <TableCell>{grievance.teacherName}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(grievance.status)}>
-                          {getStatusIcon(grievance.status)}
-                          <span className="ml-1 capitalize">{grievance.status.replace('_', ' ')}</span>
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(grievance.submissionDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Button variant="outline" size="sm">
-                          View Details
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+          <div className="space-y-4">
+            {grievances.map((grievance) => (
+              <Card key={grievance.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">{grievance.answer_sheet?.exam?.subject?.name}</CardTitle>
+                      <CardDescription>
+                        {grievance.answer_sheet?.exam?.name} - Question {grievance.question_number}{grievance.sub_question && `(${grievance.sub_question})`} - {grievance.student?.name}
+                      </CardDescription>
+                    </div>
+                    <Badge className={getStatusColor(grievance.status)}>
+                      {getStatusIcon(grievance.status)}
+                      <span className="ml-1 capitalize">{grievance.status.replace('_', ' ')}</span>
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Current Marks</p>
+                        <p className="text-lg font-bold">{grievance.current_marks}</p>
+                      </div>
+                      {grievance.updated_marks && (
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Updated Marks</p>
+                          <p className="text-lg font-bold text-green-600">{grievance.updated_marks}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Grievance:</p>
+                      <p className="text-sm mt-1">{grievance.grievance_text}</p>
+                    </div>
+                    {grievance.teacher_response && (
+                      <div className="bg-gray-50 p-3 rounded-md">
+                        <p className="text-sm font-medium text-muted-foreground">Teacher Response:</p>
+                        <p className="text-sm mt-1">{grievance.teacher_response}</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Responded on: {new Date(grievance.reviewed_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Submitted: {new Date(grievance.submitted_at).toLocaleDateString()}</span>
+                      <span>Reviewer: {grievance.reviewer?.name}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
               </Table>
             </CardContent>
           </Card>

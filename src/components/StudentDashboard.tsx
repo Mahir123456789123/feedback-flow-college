@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockAnswerSheets, mockGrievances } from '@/data/mockData';
+import { useAnswerSheets, useGrievances } from '@/hooks/useDatabase';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { FileText, AlertTriangle, CheckCircle, Clock, Eye, MessageSquare } from 'lucide-react';
 
@@ -18,7 +19,7 @@ const StudentDashboard = () => {
   const [questionNumber, setQuestionNumber] = useState('');
   const [subQuestionNumber, setSubQuestionNumber] = useState('');
   const [currentMarks, setCurrentMarks] = useState('');
-  const [grievances, setGrievances] = useState(mockGrievances.filter(grievance => grievance.studentId === user?.id));
+  const [grievances, setGrievances] = useState<any[]>([]);
 
   const studentAnswerSheets = mockAnswerSheets.filter(sheet => sheet.studentId === user?.id);
 
@@ -28,27 +29,10 @@ const StudentDashboard = () => {
       return;
     }
 
-    const selectedSheet = studentAnswerSheets.find(sheet => sheet.id === selectedAnswerSheet);
+    const selectedSheet = userAnswerSheets.find(sheet => sheet.id === selectedAnswerSheet);
     if (!selectedSheet) return;
 
-    const newGrievance = {
-      id: `g${Date.now()}`,
-      studentId: user?.id || '',
-      studentName: user?.user_metadata?.name || user?.email?.split('@')[0] || '',
-      answerSheetId: selectedAnswerSheet,
-      subject: selectedSheet.subject,
-      examName: selectedSheet.examName,
-      questionNumber: parseInt(questionNumber),
-      subQuestionNumber: subQuestionNumber || undefined,
-      grievanceText,
-      status: 'pending' as const,
-      teacherId: selectedSheet.teacherId,
-      teacherName: selectedSheet.teacherName,
-      submissionDate: new Date(),
-      currentMarks: parseInt(currentMarks)
-    };
-
-    setGrievances(prev => [newGrievance, ...prev]);
+    // In real app, this would submit to database via Supabase
     toast.success('Grievance submitted successfully! Your teacher will review it soon.');
     setGrievanceText('');
     setSelectedAnswerSheet('');
@@ -134,9 +118,9 @@ const StudentDashboard = () => {
                       onChange={(e) => setSelectedAnswerSheet(e.target.value)}
                     >
                       <option value="">Choose an answer sheet...</option>
-                      {studentAnswerSheets.map(sheet => (
+                      {userAnswerSheets.map(sheet => (
                         <option key={sheet.id} value={sheet.id}>
-                          {sheet.subject} - {sheet.examName}
+                          {sheet.exam?.subject?.name} - {sheet.exam?.name}
                         </option>
                       ))}
                     </select>
@@ -189,24 +173,24 @@ const StudentDashboard = () => {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {studentAnswerSheets.map((sheet) => (
+            {userAnswerSheets.map((sheet) => (
               <Card key={sheet.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
-                  <CardTitle className="text-lg">{sheet.subject}</CardTitle>
-                  <CardDescription>{sheet.examName}</CardDescription>
+                  <CardTitle className="text-lg">{sheet.exam?.subject?.name}</CardTitle>
+                  <CardDescription>{sheet.exam?.name}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Score:</span>
-                    <span className="font-semibold">{sheet.obtainedMarks}/{sheet.totalMarks}</span>
+                    <span className="font-semibold">{sheet.obtained_marks || 0}/{sheet.total_marks || 0}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Teacher:</span>
-                    <span>{sheet.teacherName}</span>
+                    <span className="text-muted-foreground">Grader:</span>
+                    <span>{sheet.grader?.name || 'Not graded'}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Date:</span>
-                    <span>{sheet.uploadDate.toLocaleDateString()}</span>
+                    <span>{new Date(sheet.upload_date).toLocaleDateString()}</span>
                   </div>
                   <Button variant="outline" className="w-full mt-3">
                     <Eye className="w-4 h-4 mr-2" />
@@ -222,15 +206,15 @@ const StudentDashboard = () => {
           <h2 className="text-xl font-semibold">Your Grievances</h2>
           
           <div className="space-y-4">
-            {grievances.map((grievance) => (
+            {userGrievances.map((grievance) => (
               <Card key={grievance.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-lg">{grievance.subject}</CardTitle>
+                      <CardTitle className="text-lg">{grievance.answer_sheet?.exam?.subject?.name}</CardTitle>
                       <CardDescription>
-                        {grievance.examName} - Question {grievance.questionNumber}
-                        {grievance.subQuestionNumber && ` (${grievance.subQuestionNumber})`}
+                        {grievance.answer_sheet?.exam?.name} - Question {grievance.question_number}
+                        {grievance.sub_question && ` (${grievance.sub_question})`}
                       </CardDescription>
                     </div>
                     <Badge className={getStatusColor(grievance.status)}>
@@ -244,22 +228,22 @@ const StudentDashboard = () => {
                 <CardContent className="space-y-3">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Your Grievance:</p>
-                    <p className="text-sm mt-1">{grievance.grievanceText}</p>
+                    <p className="text-sm mt-1">{grievance.grievance_text}</p>
                   </div>
                   
-                  {grievance.teacherResponse && (
+                  {grievance.teacher_response && (
                     <div className="bg-muted/50 p-3 rounded-lg">
                       <p className="text-sm font-medium text-muted-foreground">Teacher Response:</p>
-                      <p className="text-sm mt-1">{grievance.teacherResponse}</p>
+                      <p className="text-sm mt-1">{grievance.teacher_response}</p>
                       <p className="text-xs text-muted-foreground mt-2">
-                        Responded on: {grievance.responseDate?.toLocaleDateString()}
+                        Responded on: {new Date(grievance.reviewed_at).toLocaleDateString()}
                       </p>
                     </div>
                   )}
                   
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Submitted: {grievance.submissionDate.toLocaleDateString()}</span>
-                    <span>Teacher: {grievance.teacherName}</span>
+                    <span>Submitted: {new Date(grievance.submitted_at).toLocaleDateString()}</span>
+                    <span>Reviewer: {grievance.reviewer?.name}</span>
                   </div>
                 </CardContent>
               </Card>

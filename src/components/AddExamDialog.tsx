@@ -11,28 +11,50 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Upload, X, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { Exam, ExamTeacherAssignment } from '@/types';
+import { useDepartments, useTeachers, useSubjects } from '@/hooks/useDatabase';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AddExamDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const mockTeachers = [
-  { id: 'teacher1', name: 'Dr. Kailas Devadkar', department: 'Computer Engineering' },
-  { id: 'teacher2', name: 'Prof. Rajesh Patel', department: 'Information Technology' },
-  { id: 'teacher3', name: 'Dr. Priya Sharma', department: 'Computer Engineering' },
-  { id: 'teacher4', name: 'Prof. Amit Verma', department: 'Electronics Engineering' },
-];
-
 const AddExamDialog = ({ isOpen, onOpenChange }: AddExamDialogProps) => {
   const [examData, setExamData] = useState({
     name: '',
-    subject: '',
-    department: '',
-    semester: '',
+    subject_id: '',
     date: '',
+    start_time: '',
     duration: '',
     totalMarks: '',
+    instructions: ''
+  });
+
+  // Fetch real data from database
+  const { departments } = useDepartments();
+  const { teachers } = useTeachers();
+  const { subjects } = useSubjects();
+  
+  // Get current user for created_by field
+  const { user } = useAuth();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  useState(() => {
+    const fetchCurrentUser = async () => {
+      if (user?.id) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (data) {
+          setCurrentUserId(data.id);
+        }
+      }
+    };
+    fetchCurrentUser();
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -59,7 +81,7 @@ const AddExamDialog = ({ isOpen, onOpenChange }: AddExamDialogProps) => {
       return;
     }
 
-    const teacher = mockTeachers.find(t => t.id === currentTeacher);
+    const teacher = teachers.find(t => t.id === currentTeacher);
     if (!teacher) return;
 
     const questions = currentQuestions.split(',').map(q => parseInt(q.trim())).filter(q => !isNaN(q));
@@ -94,9 +116,9 @@ const AddExamDialog = ({ isOpen, onOpenChange }: AddExamDialogProps) => {
     setTeacherAssignments(teacherAssignments.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
-    if (!examData.name || !examData.subject || !examData.department || !examData.semester || 
-        !examData.date || !examData.duration || !examData.totalMarks) {
+  const handleSubmit = async () => {
+    if (!examData.name || !examData.subject_id || !examData.date || !examData.start_time || 
+        !examData.duration || !examData.totalMarks) {
       toast.error('Please fill in all exam details');
       return;
     }
@@ -106,37 +128,59 @@ const AddExamDialog = ({ isOpen, onOpenChange }: AddExamDialogProps) => {
       return;
     }
 
-    const newExam: Exam = {
-      id: `exam_${Date.now()}`,
-      name: examData.name,
-      subject: examData.subject,
-      department: examData.department,
-      semester: examData.semester,
-      date: new Date(examData.date),
-      duration: parseInt(examData.duration),
-      totalMarks: parseInt(examData.totalMarks),
-      questionPaperUrl: selectedFile ? URL.createObjectURL(selectedFile) : undefined,
-      assignedTeachers: teacherAssignments,
-      createdAt: new Date(),
-      createdBy: 'admin'
-    };
+    try {
+      // Create exam
+      const { data: exam, error: examError } = await supabase
+        .from('exams')
+        .insert({
+          name: examData.name,
+          subject_id: examData.subject_id,
+          exam_date: examData.date,
+          start_time: examData.start_time,
+          duration_minutes: parseInt(examData.duration),
+          total_marks: parseInt(examData.totalMarks),
+          instructions: examData.instructions,
+          status: 'scheduled',
+          created_by: currentUserId || 'admin'
+        })
+        .select()
+        .single();
 
-    console.log('New exam created:', newExam);
-    toast.success('Exam created successfully');
-    
-    // Reset form
-    setExamData({
-      name: '',
-      subject: '',
-      department: '',
-      semester: '',
-      date: '',
-      duration: '',
-      totalMarks: '',
-    });
-    setSelectedFile(null);
-    setTeacherAssignments([]);
-    onOpenChange(false);
+      if (examError) throw examError;
+
+      // Create teacher assignments
+      const assignments = teacherAssignments.map(assignment => ({
+        exam_id: exam.id,
+        teacher_id: assignment.teacherId,
+        assigned_questions: assignment.assignedQuestions,
+        marks_per_question: assignment.marksPerQuestion
+      }));
+
+      const { error: assignmentError } = await supabase
+        .from('exam_teacher_assignments')
+        .insert(assignments);
+
+      if (assignmentError) throw assignmentError;
+
+      toast.success('Exam created successfully');
+      
+      // Reset form
+      setExamData({
+        name: '',
+        subject_id: '',
+        date: '',
+        start_time: '',
+        duration: '',
+        totalMarks: '',
+        instructions: ''
+      });
+      setSelectedFile(null);
+      setTeacherAssignments([]);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error creating exam:', error);
+      toast.error('Failed to create exam');
+    }
   };
 
   return (
@@ -168,37 +212,38 @@ const AddExamDialog = ({ isOpen, onOpenChange }: AddExamDialogProps) => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="subject">Subject</Label>
-                  <Input
-                    id="subject"
-                    value={examData.subject}
-                    onChange={(e) => setExamData({ ...examData, subject: e.target.value })}
-                    placeholder="Operating Systems"
-                  />
+                  <Select value={examData.subject_id} onValueChange={(value) => setExamData({ ...examData, subject_id: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id}>
+                          {subject.name} ({subject.department_name})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  <Select value={examData.department} onValueChange={(value) => setExamData({ ...examData, department: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Computer Engineering">Computer Engineering</SelectItem>
-                      <SelectItem value="Information Technology">Information Technology</SelectItem>
-                      <SelectItem value="Electronics Engineering">Electronics Engineering</SelectItem>
-                      <SelectItem value="Mechanical Engineering">Mechanical Engineering</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={examData.start_time}
+                    onChange={(e) => setExamData({ ...examData, start_time: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="semester">Semester</Label>
-                  <Input
-                    id="semester"
-                    value={examData.semester}
-                    onChange={(e) => setExamData({ ...examData, semester: e.target.value })}
-                    placeholder="Semester 3 - AY 2024-25"
+                  <Label htmlFor="instructions">Instructions</Label>
+                  <Textarea
+                    id="instructions"
+                    value={examData.instructions}
+                    onChange={(e) => setExamData({ ...examData, instructions: e.target.value })}
+                    placeholder="Additional exam instructions"
                   />
                 </div>
               </div>
@@ -285,9 +330,9 @@ const AddExamDialog = ({ isOpen, onOpenChange }: AddExamDialogProps) => {
                       <SelectValue placeholder="Select teacher" />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockTeachers.map((teacher) => (
+                      {teachers.map((teacher) => (
                         <SelectItem key={teacher.id} value={teacher.id}>
-                          {teacher.name}
+                          {teacher.name} ({teacher.department})
                         </SelectItem>
                       ))}
                     </SelectContent>
