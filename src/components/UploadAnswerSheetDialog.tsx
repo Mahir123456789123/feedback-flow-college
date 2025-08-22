@@ -1,44 +1,39 @@
-
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useExams } from '@/hooks/useDatabase';
 
 interface UploadAnswerSheetDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-// Mock students data - in real app this would come from your database
-const mockStudents = [
-  { id: 'student1', name: 'Mahir Shah', email: 'mahir.shah@student.spit.ac.in', department: 'Computer Engineering' },
-  { id: 'student2', name: 'Kavya Shah', email: 'kavya.shah@student.spit.ac.in', department: 'Information Technology' },
-  { id: 'student3', name: 'Rahul Patel', email: 'rahul.patel@student.spit.ac.in', department: 'Computer Engineering' },
-  { id: 'student4', name: 'Priya Singh', email: 'priya.singh@student.spit.ac.in', department: 'Electronics Engineering' },
-];
-
-const mockTeachers = [
-  { id: 'teacher1', name: 'Dr. Kailas Devadkar', department: 'Computer Engineering' },
-  { id: 'teacher2', name: 'Prof. Rajesh Patel', department: 'Information Technology' },
-  { id: 'teacher3', name: 'Dr. Sharma', department: 'Computer Engineering' },
-];
-
 const UploadAnswerSheetDialog = ({ isOpen, onOpenChange }: UploadAnswerSheetDialogProps) => {
   const [formData, setFormData] = useState({
     studentId: '',
-    subject: '',
-    examName: '',
-    totalMarks: '',
-    obtainedMarks: '',
-    teacherId: '',
-    semester: '',
-    department: '',
-    file: null as File | null
+    examId: '',
+    file: null as File | null,
   });
+  const [students, setStudents] = useState<any[]>([]);
+  
+  const { exams } = useExams();
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'student');
+      if (data) setStudents(data);
+    };
+    fetchStudents();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -51,49 +46,61 @@ const UploadAnswerSheetDialog = ({ isOpen, onOpenChange }: UploadAnswerSheetDial
     }
   };
 
-  const handleStudentChange = (studentId: string) => {
-    const student = mockStudents.find(s => s.id === studentId);
-    if (student) {
-      setFormData(prev => ({
-        ...prev,
-        studentId,
-        department: student.department
-      }));
-    }
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleSubmit = () => {
-    if (!formData.studentId || !formData.subject || !formData.examName || 
-        !formData.totalMarks || !formData.obtainedMarks || !formData.teacherId || 
-        !formData.semester || !formData.file) {
-      toast.error('Please fill in all fields and select a file');
+  const handleSubmit = async () => {
+    if (!formData.studentId || !formData.examId || !formData.file) {
+      toast.error('Please fill in all fields and upload a file');
       return;
     }
 
-    if (parseInt(formData.obtainedMarks) > parseInt(formData.totalMarks)) {
-      toast.error('Obtained marks cannot be greater than total marks');
-      return;
-    }
+    try {
+      // Upload file to Supabase storage
+      const fileExt = formData.file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('answer-sheets')
+        .upload(fileName, formData.file);
 
-    // In a real app, you would upload the file and save the data to your database
-    console.log('Uploading answer sheet:', formData);
-    
-    toast.success('Answer sheet uploaded successfully');
-    setFormData({
-      studentId: '',
-      subject: '',
-      examName: '',
-      totalMarks: '',
-      obtainedMarks: '',
-      teacherId: '',
-      semester: '',
-      department: '',
-      file: null
-    });
-    onOpenChange(false);
+      if (uploadError) throw uploadError;
+
+      // Save answer sheet record
+      const selectedExam = exams.find(e => e.id === formData.examId);
+      const { error: insertError } = await supabase
+        .from('answer_sheets')
+        .insert({
+          exam_id: formData.examId,
+          student_id: formData.studentId,
+          file_url: uploadData.path,
+          total_marks: selectedExam?.total_marks || 100
+        });
+
+      if (insertError) throw insertError;
+
+      toast.success('Answer sheet uploaded successfully!');
+      
+      // Reset form
+      setFormData({
+        studentId: '',
+        examId: '',
+        file: null,
+      });
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload answer sheet');
+    }
   };
 
-  const selectedStudent = mockStudents.find(s => s.id === formData.studentId);
+  const selectedStudent = students.find(s => s.id === formData.studentId);
+  const selectedExam = exams.find(e => e.id === formData.examId);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -101,7 +108,7 @@ const UploadAnswerSheetDialog = ({ isOpen, onOpenChange }: UploadAnswerSheetDial
         <DialogHeader>
           <DialogTitle>Upload Answer Sheet</DialogTitle>
           <DialogDescription>
-            Select a student and upload their answer sheet with evaluation details
+            Select a student, exam, and upload their answer sheet
           </DialogDescription>
         </DialogHeader>
         
@@ -109,12 +116,12 @@ const UploadAnswerSheetDialog = ({ isOpen, onOpenChange }: UploadAnswerSheetDial
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="student">Select Student</Label>
-              <Select value={formData.studentId} onValueChange={handleStudentChange}>
+              <Select value={formData.studentId} onValueChange={(value) => handleInputChange('studentId', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a student" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockStudents.map((student) => (
+                  {students.map((student) => (
                     <SelectItem key={student.id} value={student.id}>
                       {student.name} - {student.department}
                     </SelectItem>
@@ -129,97 +136,31 @@ const UploadAnswerSheetDialog = ({ isOpen, onOpenChange }: UploadAnswerSheetDial
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
-              <Input
-                id="department"
-                value={formData.department}
-                readOnly
-                className="bg-muted"
-                placeholder="Auto-filled based on student"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="subject">Subject</Label>
-              <Input
-                id="subject"
-                value={formData.subject}
-                onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-                placeholder="e.g., Operating Systems"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="examName">Exam Name</Label>
-              <Input
-                id="examName"
-                value={formData.examName}
-                onChange={(e) => setFormData(prev => ({ ...prev, examName: e.target.value }))}
-                placeholder="e.g., End Semester Examination"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="semester">Semester</Label>
-              <Select value={formData.semester} onValueChange={(value) => setFormData(prev => ({ ...prev, semester: value }))}>
+              <Label htmlFor="exam">Exam</Label>
+              <Select value={formData.examId} onValueChange={(value) => handleInputChange('examId', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select semester" />
+                  <SelectValue placeholder="Choose an exam" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Semester 1</SelectItem>
-                  <SelectItem value="2">Semester 2</SelectItem>
-                  <SelectItem value="3">Semester 3</SelectItem>
-                  <SelectItem value="4">Semester 4</SelectItem>
-                  <SelectItem value="5">Semester 5</SelectItem>
-                  <SelectItem value="6">Semester 6</SelectItem>
-                  <SelectItem value="7">Semester 7</SelectItem>
-                  <SelectItem value="8">Semester 8</SelectItem>
+                  {exams.map((exam) => (
+                    <SelectItem key={exam.id} value={exam.id}>
+                      {exam.name} - {exam.subject?.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="totalMarks">Total Marks</Label>
-              <Input
-                id="totalMarks"
-                type="number"
-                value={formData.totalMarks}
-                onChange={(e) => setFormData(prev => ({ ...prev, totalMarks: e.target.value }))}
-                placeholder="e.g., 100"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="obtainedMarks">Obtained Marks</Label>
-              <Input
-                id="obtainedMarks"
-                type="number"
-                value={formData.obtainedMarks}
-                onChange={(e) => setFormData(prev => ({ ...prev, obtainedMarks: e.target.value }))}
-                placeholder="e.g., 85"
-              />
-            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="teacher">Evaluating Teacher</Label>
-            <Select value={formData.teacherId} onValueChange={(value) => setFormData(prev => ({ ...prev, teacherId: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select evaluating teacher" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockTeachers.map((teacher) => (
-                  <SelectItem key={teacher.id} value={teacher.id}>
-                    {teacher.name} - {teacher.department}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {selectedStudent && selectedExam && (
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-medium mb-2">Upload Details</h4>
+              <p className="text-sm text-muted-foreground">Student: {selectedStudent.name}</p>
+              <p className="text-sm text-muted-foreground">Exam: {selectedExam.name}</p>
+              <p className="text-sm text-muted-foreground">Subject: {selectedExam.subject?.name}</p>
+              <p className="text-sm text-muted-foreground">Total Marks: {selectedExam.total_marks}</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="file">Answer Sheet (PDF)</Label>

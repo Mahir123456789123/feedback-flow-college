@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserPlus, Upload, X, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { useExams } from '@/hooks/useDatabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ExamEnrollmentDialogProps {
   isOpen: boolean;
@@ -18,65 +19,61 @@ interface ExamEnrollmentDialogProps {
   preselectedExamId?: string;
 }
 
-// Mock data for existing exams
-const mockExams = [
-  {
-    id: '1',
-    name: 'End Semester Examination',
-    subject: 'Operating Systems',
-    department: 'Computer Engineering',
-    semester: 'Semester 6',
-    date: new Date('2024-02-15'),
-    totalMarks: 100
-  },
-  {
-    id: '2',
-    name: 'Internal Assessment 2',
-    subject: 'Database Management',
-    department: 'Computer Engineering',
-    semester: 'Semester 5',
-    date: new Date('2024-02-20'),
-    totalMarks: 50
-  }
-];
-
-// Mock students
-const mockStudents = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', rollNo: 'CE001' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', rollNo: 'CE002' },
-  { id: '3', name: 'Mike Johnson', email: 'mike@example.com', rollNo: 'CE003' },
-  { id: '4', name: 'Sarah Wilson', email: 'sarah@example.com', rollNo: 'CE004' }
-];
-
 const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamEnrollmentDialogProps) => {
   const [selectedExamId, setSelectedExamId] = useState<string>('');
-  const [enrolledStudents, setEnrolledStudents] = useState<typeof mockStudents>([]);
+  const [enrolledStudents, setEnrolledStudents] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [answerSheetUploads, setAnswerSheetUploads] = useState<Record<string, File>>({});
+  
+  const { exams, loading: examsLoading } = useExams();
 
-  // Set preselected exam when dialog opens
   useEffect(() => {
     if (isOpen && preselectedExamId) {
       setSelectedExamId(preselectedExamId);
     }
   }, [isOpen, preselectedExamId]);
 
-  const selectedExam = mockExams.find(exam => exam.id === selectedExamId);
-  const availableStudents = mockStudents.filter(
+  useEffect(() => {
+    const fetchStudents = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'student');
+      if (data) setStudents(data);
+    };
+    fetchStudents();
+  }, []);
+
+  const selectedExam = exams.find(exam => exam.id === selectedExamId);
+  const availableStudents = students.filter(
     student => !enrolledStudents.find(enrolled => enrolled.id === student.id)
   );
 
-  const handleAddStudent = () => {
+  const handleAddStudent = async () => {
     if (!selectedStudentId) {
       toast.error('Please select a student');
       return;
     }
 
-    const student = mockStudents.find(s => s.id === selectedStudentId);
+    const student = students.find(s => s.id === selectedStudentId);
     if (student) {
-      setEnrolledStudents([...enrolledStudents, student]);
-      setSelectedStudentId('');
-      toast.success(`${student.name} added to exam`);
+      try {
+        const { error } = await supabase
+          .from('exam_enrollments')
+          .insert({
+            exam_id: selectedExamId,
+            student_id: selectedStudentId
+          });
+        
+        if (error) throw error;
+        
+        setEnrolledStudents([...enrolledStudents, student]);
+        setSelectedStudentId('');
+        toast.success(`${student.name} added to exam`);
+      } catch (error) {
+        toast.error('Failed to enroll student');
+      }
     }
   };
 
@@ -126,14 +123,43 @@ const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamE
     onOpenChange(false);
   };
 
-  const handleBulkUpload = () => {
+  const handleBulkUpload = async () => {
     const uploadedCount = Object.keys(answerSheetUploads).length;
     if (uploadedCount === 0) {
       toast.error('No answer sheets uploaded');
       return;
     }
 
-    toast.success(`${uploadedCount} answer sheets uploaded successfully`);
+    try {
+      // Upload all files and create answer sheet records
+      for (const [studentId, file] of Object.entries(answerSheetUploads)) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${studentId}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('answer-sheets')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { error: insertError } = await supabase
+          .from('answer_sheets')
+          .insert({
+            exam_id: selectedExamId,
+            student_id: studentId,
+            file_url: uploadData.path,
+            total_marks: selectedExam?.total_marks || 100
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      toast.success(`${uploadedCount} answer sheets uploaded successfully`);
+      setAnswerSheetUploads({});
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload some answer sheets');
+    }
   };
 
   return (
@@ -156,9 +182,9 @@ const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamE
                   <SelectValue placeholder="Choose an existing exam" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockExams.map((exam) => (
+                  {exams.map((exam) => (
                     <SelectItem key={exam.id} value={exam.id}>
-                      {exam.name} - {exam.subject} ({exam.department})
+                      {exam.name} - {exam.subject?.name} ({exam.subject?.department?.name})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -175,19 +201,19 @@ const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamE
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Subject:</span>
-                    <p>{selectedExam.subject}</p>
+                    <p>{selectedExam.subject?.name}</p>
                   </div>
                   <div>
                     <span className="font-medium">Department:</span>
-                    <p>{selectedExam.department}</p>
+                    <p>{selectedExam.subject?.department?.name}</p>
                   </div>
                   <div>
                     <span className="font-medium">Date:</span>
-                    <p>{selectedExam.date.toLocaleDateString()}</p>
+                    <p>{new Date(selectedExam.exam_date).toLocaleDateString()}</p>
                   </div>
                   <div>
                     <span className="font-medium">Total Marks:</span>
-                    <p>{selectedExam.totalMarks}</p>
+                    <p>{selectedExam.total_marks}</p>
                   </div>
                 </div>
               </CardContent>
@@ -212,7 +238,7 @@ const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamE
                       <SelectContent>
                         {availableStudents.map((student) => (
                           <SelectItem key={student.id} value={student.id}>
-                            {student.name} ({student.rollNo}) - {student.email}
+                            {student.name} - {student.email}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -230,18 +256,18 @@ const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamE
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Roll No</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Email</TableHead>
+                          <TableHead>Department</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {enrolledStudents.map((student) => (
                           <TableRow key={student.id}>
-                            <TableCell>{student.rollNo}</TableCell>
                             <TableCell className="font-medium">{student.name}</TableCell>
                             <TableCell>{student.email}</TableCell>
+                            <TableCell>{student.department}</TableCell>
                             <TableCell>
                               <Button
                                 variant="outline"
@@ -279,7 +305,6 @@ const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamE
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Roll No</TableHead>
                             <TableHead>Student Name</TableHead>
                             <TableHead>Answer Sheet</TableHead>
                             <TableHead>Status</TableHead>
@@ -288,7 +313,6 @@ const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamE
                         <TableBody>
                           {enrolledStudents.map((student) => (
                             <TableRow key={student.id}>
-                              <TableCell>{student.rollNo}</TableCell>
                               <TableCell className="font-medium">{student.name}</TableCell>
                               <TableCell>
                                 <Input
