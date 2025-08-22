@@ -31,13 +31,26 @@ const AdminDashboard = () => {
 
   const assignTeacher = async (examId: string, teacherId: string) => {
     try {
+      // Check if assignment already exists
+      const { data: existingAssignment } = await supabase
+        .from('exam_teacher_assignments')
+        .select('id')
+        .eq('exam_id', examId)
+        .eq('teacher_id', teacherId)
+        .single();
+
+      if (existingAssignment) {
+        toast.info('Teacher is already assigned to this exam');
+        return;
+      }
+
       const { error } = await supabase
         .from('exam_teacher_assignments')
-        .upsert({
+        .insert({
           exam_id: examId,
           teacher_id: teacherId,
-          assigned_questions: [1, 2, 3], // Default questions
-          marks_per_question: { "1": 20, "2": 20, "3": 20 } // Default marks
+          assigned_questions: [1, 2, 3, 4, 5], // Default questions
+          marks_per_question: { "1": 20, "2": 20, "3": 20, "4": 20, "5": 20 } // Default marks
         });
 
       if (error) throw error;
@@ -47,7 +60,10 @@ const AdminDashboard = () => {
         [examId]: teacherId
       }));
 
-      toast.success('Teacher assigned successfully');
+      // Refresh exams to show updated assignments
+      refetch();
+
+      toast.success('Teacher assigned successfully! They will see this exam in their dashboard.');
     } catch (error) {
       console.error('Error assigning teacher:', error);
       toast.error('Failed to assign teacher');

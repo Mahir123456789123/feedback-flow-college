@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAnswerSheets, useGrievances } from '@/hooks/useDatabase';
+import { useAnswerSheets, useGrievances, useTeacherExams } from '@/hooks/useDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { FileText, CheckCircle, Clock, Eye, MessageSquare, AlertTriangle, Star } from 'lucide-react';
@@ -40,6 +40,7 @@ const TeacherDashboard = () => {
   // Fetch real data from database
   const { answerSheets, loading: answersLoading } = useAnswerSheets(currentUserId || undefined, user?.user_metadata?.role);
   const { grievances, loading: grievancesLoading, updateGrievanceStatus } = useGrievances(currentUserId || undefined, user?.user_metadata?.role);
+  const { teacherExams, loading: examsLoading } = useTeacherExams(currentUserId || undefined);
 
   // Filter data
   const pendingPapers = answerSheets.filter(sheet => sheet.grading_status === 'pending');
@@ -81,7 +82,7 @@ const TeacherDashboard = () => {
     await updateGrievanceStatus(grievanceId, status, response, updatedMarks);
   };
 
-  if (answersLoading || grievancesLoading) {
+  if (answersLoading || grievancesLoading || examsLoading) {
     return (
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <div className="text-center">
@@ -161,20 +162,47 @@ const TeacherDashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 className="text-sm font-medium">Total Papers</h3>
+                <h3 className="text-sm font-medium">Assigned Exams</h3>
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{answerSheets.length}</div>
+                <div className="text-2xl font-bold">{teacherExams.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  assigned to you
+                  exams assigned to you
                 </p>
               </CardContent>
             </Card>
           </div>
 
           {/* Recent Activity */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <h3 className="text-lg font-semibold">Assigned Exams</h3>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {teacherExams.slice(0, 5).map((assignment) => (
+                  <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{assignment.exam?.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {assignment.exam?.subject?.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Questions: {assignment.assigned_questions?.join(', ')}
+                      </p>
+                    </div>
+                    <Badge variant="outline">
+                      {assignment.exam?.status}
+                    </Badge>
+                  </div>
+                ))}
+                {teacherExams.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">No exams assigned yet</p>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <h3 className="text-lg font-semibold">Recent Papers to Grade</h3>

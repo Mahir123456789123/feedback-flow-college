@@ -89,34 +89,52 @@ export const useExams = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchExams = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('exams')
-          .select(`
-            *,
-            subject:subjects(name, code, department:departments(name)),
-            exam_teacher_assignments(
-              teacher:profiles!exam_teacher_assignments_teacher_id_fkey(id, name),
-              assigned_questions,
-              marks_per_question
-            )
-          `);
-        if (error) throw error;
-        setExams(data || []);
-      } catch (err) {
-        console.error('Error fetching exams:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch exams');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchExams = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('exams')
+        .select(`
+          *,
+          subject:subjects(name, code, department:departments(name)),
+          exam_teacher_assignments(
+            teacher:profiles!exam_teacher_assignments_teacher_id_fkey(id, name),
+            assigned_questions,
+            marks_per_question
+          )
+        `);
+      if (error) throw error;
+      setExams(data || []);
+    } catch (err) {
+      console.error('Error fetching exams:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch exams');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchExams();
+
+    // Set up real-time subscription for exam changes
+    const channel = supabase
+      .channel('exam_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'exams' }, 
+        () => fetchExams()
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'exam_teacher_assignments' }, 
+        () => fetchExams()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  return { exams, loading, error, refetch: () => window.location.reload() };
+  return { exams, loading, error, refetch: fetchExams };
 };
 
 export const useAnswerSheets = (currentUserId?: string, role?: string) => {
@@ -124,62 +142,85 @@ export const useAnswerSheets = (currentUserId?: string, role?: string) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchAnswerSheets = async () => {
-      if (!currentUserId) return;
-      
-      try {
-        let query = supabase
-          .from('answer_sheets')
-          .select(`
-            *,
-            exam:exams(
-              name,
-              subject:subjects(name, department:departments(name))
-            ),
-            student:profiles!answer_sheets_student_id_fkey(name, email),
-            grader:profiles!answer_sheets_graded_by_fkey(name)
-          `);
+  const fetchAnswerSheets = async () => {
+    if (!currentUserId) return;
+    
+    try {
+      setLoading(true);
+      let query = supabase
+        .from('answer_sheets')
+        .select(`
+          *,
+          exam:exams(
+            name,
+            subject:subjects(name, department:departments(name))
+          ),
+          student:profiles!answer_sheets_student_id_fkey(name, email),
+          grader:profiles!answer_sheets_graded_by_fkey(name)
+        `);
 
-        // Filter based on role
-        if (role === 'student') {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('user_id', currentUserId)
-            .single();
-          
-          if (profileData) {
-            query = query.eq('student_id', profileData.id);
-          }
-        } else if (role === 'teacher') {
-          // Teachers only see sheets assigned to them
-          const { data: assignedExams } = await supabase
-            .from('exam_teacher_assignments')
-            .select('exam_id')
-            .eq('teacher_id', currentUserId);
-          
-          const examIds = assignedExams?.map(a => a.exam_id) || [];
-          if (examIds.length > 0) {
-            query = query.in('exam_id', examIds);
-          }
+      // Filter based on role
+      if (role === 'student') {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', currentUserId)
+          .single();
+        
+        if (profileData) {
+          query = query.eq('student_id', profileData.id);
         }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        setAnswerSheets(data || []);
-      } catch (err) {
-        console.error('Error fetching answer sheets:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch answer sheets');
-      } finally {
-        setLoading(false);
+      } else if (role === 'teacher') {
+        // Teachers only see sheets assigned to them
+        const { data: assignedExams } = await supabase
+          .from('exam_teacher_assignments')
+          .select('exam_id')
+          .eq('teacher_id', currentUserId);
+        
+        const examIds = assignedExams?.map(a => a.exam_id) || [];
+        if (examIds.length > 0) {
+          query = query.in('exam_id', examIds);
+        } else {
+          // No assignments, return empty
+          setAnswerSheets([]);
+          setLoading(false);
+          return;
+        }
       }
-    };
 
+      const { data, error } = await query;
+      if (error) throw error;
+      setAnswerSheets(data || []);
+    } catch (err) {
+      console.error('Error fetching answer sheets:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch answer sheets');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchAnswerSheets();
+
+    // Set up real-time subscription for answer sheet changes
+    const channel = supabase
+      .channel('answer_sheet_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'answer_sheets' }, 
+        () => fetchAnswerSheets()
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'exam_teacher_assignments' }, 
+        () => fetchAnswerSheets()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [currentUserId, role]);
 
-  return { answerSheets, loading, error };
+  return { answerSheets, loading, error, refetch: fetchAnswerSheets };
 };
 
 export const useGrievances = (currentUserId?: string, role?: string) => {
@@ -280,4 +321,107 @@ export const useGrievances = (currentUserId?: string, role?: string) => {
   };
 
   return { grievances, loading, error, updateGrievanceStatus };
+};
+
+// Hook for teacher exam assignments
+export const useTeacherExams = (teacherId?: string) => {
+  const [teacherExams, setTeacherExams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTeacherExams = async () => {
+    if (!teacherId) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('exam_teacher_assignments')
+        .select(`
+          *,
+          exam:exams(
+            *,
+            subject:subjects(name, code, department:departments(name))
+          )
+        `)
+        .eq('teacher_id', teacherId);
+
+      if (error) throw error;
+      setTeacherExams(data || []);
+    } catch (err) {
+      console.error('Error fetching teacher exams:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch teacher exams');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTeacherExams();
+
+    // Set up real-time subscription for teacher assignment changes
+    const channel = supabase
+      .channel('teacher_exam_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'exam_teacher_assignments', filter: `teacher_id=eq.${teacherId}` }, 
+        () => fetchTeacherExams()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [teacherId]);
+
+  return { teacherExams, loading, error, refetch: fetchTeacherExams };
+};
+
+// Hook for student enrollments
+export const useStudentEnrollments = (studentId?: string) => {
+  const [enrollments, setEnrollments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchEnrollments = async () => {
+      if (!studentId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('exam_enrollments')
+          .select(`
+            *,
+            exam:exams(
+              *,
+              subject:subjects(name, code, department:departments(name))
+            )
+          `)
+          .eq('student_id', studentId);
+
+        if (error) throw error;
+        setEnrollments(data || []);
+      } catch (err) {
+        console.error('Error fetching student enrollments:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch enrollments');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEnrollments();
+
+    // Set up real-time subscription for enrollment changes
+    const channel = supabase
+      .channel('student_enrollment_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'exam_enrollments', filter: `student_id=eq.${studentId}` }, 
+        () => fetchEnrollments()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [studentId]);
+
+  return { enrollments, loading, error };
 };
