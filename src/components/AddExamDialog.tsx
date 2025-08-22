@@ -18,9 +18,10 @@ import { useAuth } from '@/contexts/AuthContext';
 interface AddExamDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onExamAdded?: () => void;
 }
 
-const AddExamDialog = ({ isOpen, onOpenChange }: AddExamDialogProps) => {
+const AddExamDialog = ({ isOpen, onOpenChange, onExamAdded }: AddExamDialogProps) => {
   const [examData, setExamData] = useState({
     name: '',
     subject_id: '',
@@ -176,6 +177,12 @@ const AddExamDialog = ({ isOpen, onOpenChange }: AddExamDialogProps) => {
       });
       setSelectedFile(null);
       setTeacherAssignments([]);
+      
+      // Call the onExamAdded callback if provided
+      if (onExamAdded) {
+        onExamAdded();
+      }
+      
       onOpenChange(false);
     } catch (error) {
       console.error('Error creating exam:', error);
