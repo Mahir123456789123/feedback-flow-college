@@ -21,6 +21,9 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [teacherAssignments, setTeacherAssignments] = useState<{[examId: string]: string}>({});
   const [selectedExamForEnrollment, setSelectedExamForEnrollment] = useState<string>('');
+  const [isAddExamOpen, setIsAddExamOpen] = useState(false);
+  const [isUploadAnswerSheetOpen, setIsUploadAnswerSheetOpen] = useState(false);
+  const [isExamEnrollmentOpen, setIsExamEnrollmentOpen] = useState(false);
   
   // Fetch data from database
   const { departments, loading: deptLoading } = useDepartments();
@@ -55,6 +58,11 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleExamAdded = () => {
+    refetch();
+    setIsAddExamOpen(false);
+  };
+
   if (deptLoading || teachersLoading || subjectsLoading || examsLoading) {
     return (
       <div className="max-w-7xl mx-auto p-6 space-y-6">
@@ -74,10 +82,20 @@ const AdminDashboard = () => {
           <p className="text-muted-foreground">Manage exams, teachers, and students</p>
         </div>
         <div className="flex gap-2">
-          <AddExamDialog onExamAdded={refetch} />
-          <UploadAnswerSheetDialog />
+          <Button onClick={() => setIsAddExamOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Exam
+          </Button>
+          <Button variant="outline" onClick={() => setIsUploadAnswerSheetOpen(true)}>
+            <FileText className="h-4 w-4 mr-2" />
+            Upload Answer Sheet
+          </Button>
         </div>
       </div>
+
+      <AddExamDialog isOpen={isAddExamOpen} onOpenChange={setIsAddExamOpen} onExamAdded={handleExamAdded} />
+      <UploadAnswerSheetDialog isOpen={isUploadAnswerSheetOpen} onOpenChange={setIsUploadAnswerSheetOpen} />
+      <ExamEnrollmentDialog isOpen={isExamEnrollmentOpen} onOpenChange={setIsExamEnrollmentOpen} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
@@ -191,7 +209,10 @@ const AdminDashboard = () => {
         <TabsContent value="exams" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Exam Management</h2>
-            <ExamEnrollmentDialog />
+            <Button onClick={() => setIsExamEnrollmentOpen(true)}>
+              <Users className="h-4 w-4 mr-2" />
+              Manage Enrollments
+            </Button>
           </div>
           
           <div className="grid gap-4">
