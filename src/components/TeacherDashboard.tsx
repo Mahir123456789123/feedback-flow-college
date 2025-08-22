@@ -1,18 +1,16 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnswerSheets, useGrievances } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
 import { MessageSquare, Eye, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp, BarChart3, FileText } from 'lucide-react';
 import PaperCheckingInterface from './PaperCheckingInterface';
-import { Grievance } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
@@ -28,14 +26,6 @@ const TeacherDashboard = () => {
   // Fetch real data from database
   const { grievances, updateGrievanceStatus } = useGrievances(currentUserId || undefined, user?.user_metadata?.role);
   const { answerSheets } = useAnswerSheets(currentUserId || undefined, user?.user_metadata?.role);
-  const [uploadForm, setUploadForm] = useState({
-    studentName: '',
-    subject: '',
-    examName: '',
-    totalMarks: '',
-    obtainedMarks: '',
-    semester: ''
-  });
 
   // Get current user profile ID
   useEffect(() => {
@@ -65,24 +55,6 @@ const TeacherDashboard = () => {
     acc[deptName] = (acc[deptName] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
-
-  const handleUploadAnswerSheet = () => {
-    if (!uploadForm.studentName || !uploadForm.subject || !uploadForm.examName || !uploadForm.totalMarks || !uploadForm.obtainedMarks) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    // In a real app, this would upload to a backend
-    toast.success('Answer sheet uploaded successfully!');
-    setUploadForm({
-      studentName: '',
-      subject: '',
-      examName: '',
-      totalMarks: '',
-      obtainedMarks: '',
-      semester: ''
-    });
-  };
 
   const handleGrievanceResponse = (grievanceId: string, action: 'approve' | 'reject') => {
     if (!responseText.trim()) {
@@ -167,7 +139,6 @@ const TeacherDashboard = () => {
             Statistics
           </TabsTrigger>
         </TabsList>
-
 
         <TabsContent value="paper-checking" className="space-y-4">
           <PaperCheckingInterface />

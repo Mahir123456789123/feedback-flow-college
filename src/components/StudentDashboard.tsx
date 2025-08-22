@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,26 +20,61 @@ const StudentDashboard = () => {
   const [questionNumber, setQuestionNumber] = useState('');
   const [subQuestionNumber, setSubQuestionNumber] = useState('');
   const [currentMarks, setCurrentMarks] = useState('');
-  const [grievances, setGrievances] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const studentAnswerSheets = mockAnswerSheets.filter(sheet => sheet.studentId === user?.id);
+  // Get current user profile ID
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      if (user?.id) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (data) {
+          setCurrentUserId(data.id);
+        }
+      }
+    };
+    fetchCurrentUser();
+  }, [user?.id]);
 
-  const handleSubmitGrievance = () => {
-    if (!selectedAnswerSheet || !questionNumber || !grievanceText.trim() || !currentMarks) {
+  // Fetch real data from database
+  const { answerSheets: userAnswerSheets, loading: answersLoading } = useAnswerSheets(currentUserId || undefined, user?.user_metadata?.role);
+  const { grievances: userGrievances, loading: grievancesLoading } = useGrievances(currentUserId || undefined, user?.user_metadata?.role);
+
+  const handleSubmitGrievance = async () => {
+    if (!selectedAnswerSheet || !questionNumber || !grievanceText.trim() || !currentMarks || !currentUserId) {
       toast.error('Please fill in all fields');
       return;
     }
 
-    const selectedSheet = userAnswerSheets.find(sheet => sheet.id === selectedAnswerSheet);
-    if (!selectedSheet) return;
+    try {
+      const { error } = await supabase
+        .from('grievances')
+        .insert({
+          answer_sheet_id: selectedAnswerSheet,
+          student_id: currentUserId,
+          question_number: parseInt(questionNumber),
+          sub_question: subQuestionNumber || null,
+          current_marks: parseFloat(currentMarks),
+          grievance_text: grievanceText,
+          status: 'pending'
+        });
 
-    // In real app, this would submit to database via Supabase
-    toast.success('Grievance submitted successfully! Your teacher will review it soon.');
-    setGrievanceText('');
-    setSelectedAnswerSheet('');
-    setQuestionNumber('');
-    setSubQuestionNumber('');
-    setCurrentMarks('');
+      if (error) throw error;
+
+      toast.success('Grievance submitted successfully! Your teacher will review it soon.');
+      setGrievanceText('');
+      setSelectedAnswerSheet('');
+      setQuestionNumber('');
+      setSubQuestionNumber('');
+      setCurrentMarks('');
+    } catch (error) {
+      console.error('Error submitting grievance:', error);
+      toast.error('Failed to submit grievance');
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -70,6 +106,17 @@ const StudentDashboard = () => {
         return 'bg-muted/10 text-muted-foreground border-muted/20';
     }
   };
+
+  if (answersLoading || grievancesLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-2">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
