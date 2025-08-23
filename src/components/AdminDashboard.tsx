@@ -12,19 +12,17 @@ import { toast } from 'sonner';
 import { Plus, Users, BookOpen, GraduationCap, FileText, Calendar, Star, Edit } from 'lucide-react';
 import AddExamDialog from './AddExamDialog';
 import EditExamDialog from './EditExamDialog';
-import UploadAnswerSheetDialog from './UploadAnswerSheetDialog';
-import ExamEnrollmentDialog from './ExamEnrollmentDialog';
+import ExamStudentAssignmentDialog from './ExamStudentAssignmentDialog';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [teacherAssignments, setTeacherAssignments] = useState<{[examId: string]: string}>({});
-  const [selectedExamForEnrollment, setSelectedExamForEnrollment] = useState<string>('');
   const [isAddExamOpen, setIsAddExamOpen] = useState(false);
   const [isEditExamOpen, setIsEditExamOpen] = useState(false);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
-  const [isUploadAnswerSheetOpen, setIsUploadAnswerSheetOpen] = useState(false);
-  const [isExamEnrollmentOpen, setIsExamEnrollmentOpen] = useState(false);
+  const [isStudentAssignmentOpen, setIsStudentAssignmentOpen] = useState(false);
+  const [selectedExamForStudents, setSelectedExamForStudents] = useState<any>(null);
   
   // Fetch data from database
   const { departments, loading: deptLoading } = useDepartments();
@@ -89,6 +87,11 @@ const AdminDashboard = () => {
     setSelectedExamId(null);
   };
 
+  const handleManageStudents = (exam: any) => {
+    setSelectedExamForStudents(exam);
+    setIsStudentAssignmentOpen(true);
+  };
+
   if (deptLoading || teachersLoading || subjectsLoading || examsLoading) {
     return (
       <div className="max-w-7xl mx-auto p-6 space-y-6">
@@ -122,8 +125,12 @@ const AdminDashboard = () => {
         examId={selectedExamId}
         onExamUpdated={handleExamUpdated}
       />
-      <UploadAnswerSheetDialog isOpen={isUploadAnswerSheetOpen} onOpenChange={setIsUploadAnswerSheetOpen} />
-      <ExamEnrollmentDialog isOpen={isExamEnrollmentOpen} onOpenChange={setIsExamEnrollmentOpen} />
+      <ExamStudentAssignmentDialog 
+        isOpen={isStudentAssignmentOpen}
+        onOpenChange={setIsStudentAssignmentOpen}
+        examId={selectedExamForStudents?.id || ''}
+        examDetails={selectedExamForStudents}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
@@ -310,16 +317,6 @@ const AdminDashboard = () => {
         <TabsContent value="exams" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Exam Management</h2>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsUploadAnswerSheetOpen(true)}>
-                <FileText className="h-4 w-4 mr-2" />
-                Upload Answer Sheet
-              </Button>
-              <Button onClick={() => setIsExamEnrollmentOpen(true)}>
-                <Users className="h-4 w-4 mr-2" />
-                Manage Enrollments
-              </Button>
-            </div>
           </div>
           
           <div className="grid gap-4">
@@ -370,12 +367,15 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button variant="outline" size="sm" onClick={() => handleEditExam(exam.id)}>
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
-                    <Button variant="outline" size="sm">View Details</Button>
+                    <Button variant="outline" size="sm" onClick={() => handleManageStudents(exam)}>
+                      <Users className="h-4 w-4 mr-1" />
+                      Manage Students
+                    </Button>
                     <Select 
                       value={teacherAssignments[exam.id] || ''} 
                       onValueChange={(value) => assignTeacher(exam.id, value)}

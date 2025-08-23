@@ -308,6 +308,8 @@ export type Database = {
           instructions: string | null
           name: string
           question_paper_url: string | null
+          question_paper_visible_to_students: boolean | null
+          question_paper_visible_to_teachers: boolean | null
           start_time: string
           status: string
           subject_id: string
@@ -323,6 +325,8 @@ export type Database = {
           instructions?: string | null
           name: string
           question_paper_url?: string | null
+          question_paper_visible_to_students?: boolean | null
+          question_paper_visible_to_teachers?: boolean | null
           start_time: string
           status?: string
           subject_id: string
@@ -338,6 +342,8 @@ export type Database = {
           instructions?: string | null
           name?: string
           question_paper_url?: string | null
+          question_paper_visible_to_students?: boolean | null
+          question_paper_visible_to_teachers?: boolean | null
           start_time?: string
           status?: string
           subject_id?: string
