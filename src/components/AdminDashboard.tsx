@@ -9,8 +9,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDepartments, useTeachers, useSubjects, useExams } from '@/hooks/useDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Users, BookOpen, GraduationCap, FileText, Calendar, Star } from 'lucide-react';
+import { Plus, Users, BookOpen, GraduationCap, FileText, Calendar, Star, Edit } from 'lucide-react';
 import AddExamDialog from './AddExamDialog';
+import EditExamDialog from './EditExamDialog';
 import UploadAnswerSheetDialog from './UploadAnswerSheetDialog';
 import ExamEnrollmentDialog from './ExamEnrollmentDialog';
 
@@ -20,6 +21,8 @@ const AdminDashboard = () => {
   const [teacherAssignments, setTeacherAssignments] = useState<{[examId: string]: string}>({});
   const [selectedExamForEnrollment, setSelectedExamForEnrollment] = useState<string>('');
   const [isAddExamOpen, setIsAddExamOpen] = useState(false);
+  const [isEditExamOpen, setIsEditExamOpen] = useState(false);
+  const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [isUploadAnswerSheetOpen, setIsUploadAnswerSheetOpen] = useState(false);
   const [isExamEnrollmentOpen, setIsExamEnrollmentOpen] = useState(false);
   
@@ -75,6 +78,17 @@ const AdminDashboard = () => {
     setIsAddExamOpen(false);
   };
 
+  const handleEditExam = (examId: string) => {
+    setSelectedExamId(examId);
+    setIsEditExamOpen(true);
+  };
+
+  const handleExamUpdated = () => {
+    refetch();
+    setIsEditExamOpen(false);
+    setSelectedExamId(null);
+  };
+
   if (deptLoading || teachersLoading || subjectsLoading || examsLoading) {
     return (
       <div className="max-w-7xl mx-auto p-6 space-y-6">
@@ -98,14 +112,16 @@ const AdminDashboard = () => {
             <Plus className="h-4 w-4 mr-2" />
             Add Exam
           </Button>
-          <Button variant="outline" onClick={() => setIsUploadAnswerSheetOpen(true)}>
-            <FileText className="h-4 w-4 mr-2" />
-            Upload Answer Sheet
-          </Button>
         </div>
       </div>
 
       <AddExamDialog isOpen={isAddExamOpen} onOpenChange={setIsAddExamOpen} onExamAdded={handleExamAdded} />
+      <EditExamDialog 
+        isOpen={isEditExamOpen} 
+        onOpenChange={setIsEditExamOpen} 
+        examId={selectedExamId}
+        onExamUpdated={handleExamUpdated}
+      />
       <UploadAnswerSheetDialog isOpen={isUploadAnswerSheetOpen} onOpenChange={setIsUploadAnswerSheetOpen} />
       <ExamEnrollmentDialog isOpen={isExamEnrollmentOpen} onOpenChange={setIsExamEnrollmentOpen} />
 
@@ -294,10 +310,16 @@ const AdminDashboard = () => {
         <TabsContent value="exams" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Exam Management</h2>
-            <Button onClick={() => setIsExamEnrollmentOpen(true)}>
-              <Users className="h-4 w-4 mr-2" />
-              Manage Enrollments
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsUploadAnswerSheetOpen(true)}>
+                <FileText className="h-4 w-4 mr-2" />
+                Upload Answer Sheet
+              </Button>
+              <Button onClick={() => setIsExamEnrollmentOpen(true)}>
+                <Users className="h-4 w-4 mr-2" />
+                Manage Enrollments
+              </Button>
+            </div>
           </div>
           
           <div className="grid gap-4">
@@ -349,7 +371,10 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">Edit</Button>
+                    <Button variant="outline" size="sm" onClick={() => handleEditExam(exam.id)}>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
                     <Button variant="outline" size="sm">View Details</Button>
                     <Select 
                       value={teacherAssignments[exam.id] || ''} 
