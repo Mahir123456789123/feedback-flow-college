@@ -41,9 +41,8 @@ const ExamStudentAssignmentDialog = ({ isOpen, onOpenChange, examId, examDetails
 
   const fetchStudents = async () => {
     const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('role', 'student');
+      .from('students')
+      .select('*');
     if (data) setStudents(data);
   };
 
@@ -52,7 +51,7 @@ const ExamStudentAssignmentDialog = ({ isOpen, onOpenChange, examId, examDetails
       .from('exam_enrollments')
       .select(`
         *,
-        student:student_id (*)
+        student:students!exam_enrollments_student_id_fkey(*)
       `)
       .eq('exam_id', examId);
     
@@ -300,7 +299,7 @@ const ExamStudentAssignmentDialog = ({ isOpen, onOpenChange, examId, examDetails
                     <SelectContent>
                       {availableStudents.map((student) => (
                         <SelectItem key={student.id} value={student.id}>
-                          {student.name} - {student.email} ({student.department})
+                          {student.name} ({student.student_id}) - {student.email} ({student.department})
                         </SelectItem>
                       ))}
                     </SelectContent>

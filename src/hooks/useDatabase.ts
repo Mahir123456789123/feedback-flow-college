@@ -52,6 +52,39 @@ export const useTeachers = (departmentName?: string) => {
   return { teachers, loading, error };
 };
 
+export const useStudents = (departmentName?: string) => {
+  const [students, setStudents] = useState<Array<{
+    id: string,
+    student_id: string,
+    name: string,
+    email: string,
+    department: string,
+    semester: string,
+    academic_year: string
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_students_by_department', { dept_name: departmentName || null });
+        if (error) throw error;
+        setStudents(data || []);
+      } catch (err) {
+        console.error('Error fetching students:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch students');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, [departmentName]);
+
+  return { students, loading, error };
+};
+
 export const useSubjects = (departmentId?: string) => {
   const [subjects, setSubjects] = useState<Array<{
     id: string, 
@@ -98,7 +131,7 @@ export const useExams = () => {
           *,
           subject:subjects(name, code, department:departments(name)),
           exam_teacher_assignments(
-            teacher:profiles!exam_teacher_assignments_teacher_id_fkey(id, name),
+            teacher:teachers!exam_teacher_assignments_teacher_id_fkey(id, name),
             assigned_questions,
             marks_per_question
           )
@@ -155,36 +188,44 @@ export const useAnswerSheets = (currentUserId?: string, role?: string) => {
             name,
             subject:subjects(name, department:departments(name))
           ),
-          student:profiles!answer_sheets_student_id_fkey(name, email),
-          grader:profiles!answer_sheets_graded_by_fkey(name)
+          student:students!answer_sheets_student_id_fkey(name, email),
+          grader:teachers!answer_sheets_graded_by_fkey(name)
         `);
 
       // Filter based on role
       if (role === 'student') {
-        const { data: profileData } = await supabase
-          .from('profiles')
+        const { data: studentData } = await supabase
+          .from('students')
           .select('id')
           .eq('user_id', currentUserId)
-          .single();
+          .maybeSingle();
         
-        if (profileData) {
-          query = query.eq('student_id', profileData.id);
+        if (studentData) {
+          query = query.eq('student_id', studentData.id);
         }
       } else if (role === 'teacher') {
         // Teachers only see sheets assigned to them
-        const { data: assignedExams } = await supabase
-          .from('exam_teacher_assignments')
-          .select('exam_id')
-          .eq('teacher_id', currentUserId);
-        
-        const examIds = assignedExams?.map(a => a.exam_id) || [];
-        if (examIds.length > 0) {
-          query = query.in('exam_id', examIds);
-        } else {
-          // No assignments, return empty
-          setAnswerSheets([]);
-          setLoading(false);
-          return;
+        const { data: teacherData } = await supabase
+          .from('teachers')
+          .select('id')
+          .eq('user_id', currentUserId)
+          .maybeSingle();
+          
+        if (teacherData) {
+          const { data: assignedExams } = await supabase
+            .from('exam_teacher_assignments')
+            .select('exam_id')
+            .eq('teacher_id', teacherData.id);
+          
+          const examIds = assignedExams?.map(a => a.exam_id) || [];
+          if (examIds.length > 0) {
+            query = query.in('exam_id', examIds);
+          } else {
+            // No assignments, return empty
+            setAnswerSheets([]);
+            setLoading(false);
+            return;
+          }
         }
       }
 
@@ -242,39 +283,47 @@ export const useGrievances = (currentUserId?: string, role?: string) => {
                 name,
                 subject:subjects(name)
               ),
-              student:profiles!answer_sheets_student_id_fkey(name)
+              student:students!answer_sheets_student_id_fkey(name)
             ),
-            student:profiles!grievances_student_id_fkey(name),
-            reviewer:profiles!grievances_reviewed_by_fkey(name)
+            student:students!grievances_student_id_fkey(name),
+            reviewer:teachers!grievances_reviewed_by_fkey(name)
           `);
 
         // Filter based on role
         if (role === 'student') {
-          const { data: profileData } = await supabase
-            .from('profiles')
+          const { data: studentData } = await supabase
+            .from('students')
             .select('id')
             .eq('user_id', currentUserId)
-            .single();
+            .maybeSingle();
           
-          if (profileData) {
-            query = query.eq('student_id', profileData.id);
+          if (studentData) {
+            query = query.eq('student_id', studentData.id);
           }
         } else if (role === 'teacher') {
           // Teachers see grievances for papers they grade
-          const { data: assignedSheets } = await supabase
-            .from('exam_teacher_assignments')
-            .select('exam_id')
-            .eq('teacher_id', currentUserId);
-          
-          if (assignedSheets && assignedSheets.length > 0) {
-            const { data: answerSheets } = await supabase
-              .from('answer_sheets')
-              .select('id')
-              .in('exam_id', assignedSheets.map(a => a.exam_id));
+          const { data: teacherData } = await supabase
+            .from('teachers')
+            .select('id')
+            .eq('user_id', currentUserId)
+            .maybeSingle();
             
-            const sheetIds = answerSheets?.map(s => s.id) || [];
-            if (sheetIds.length > 0) {
-              query = query.in('answer_sheet_id', sheetIds);
+          if (teacherData) {
+            const { data: assignedSheets } = await supabase
+              .from('exam_teacher_assignments')
+              .select('exam_id')
+              .eq('teacher_id', teacherData.id);
+            
+            if (assignedSheets && assignedSheets.length > 0) {
+              const { data: answerSheets } = await supabase
+                .from('answer_sheets')
+                .select('id')
+                .in('exam_id', assignedSheets.map(a => a.exam_id));
+              
+              const sheetIds = answerSheets?.map(s => s.id) || [];
+              if (sheetIds.length > 0) {
+                query = query.in('answer_sheet_id', sheetIds);
+              }
             }
           }
         }
@@ -424,4 +473,30 @@ export const useStudentEnrollments = (studentId?: string) => {
   }, [studentId]);
 
   return { enrollments, loading, error };
+};
+
+// Hook for current user details
+export const useCurrentUser = () => {
+  const [userDetails, setUserDetails] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_current_user_details');
+        if (error) throw error;
+        setUserDetails(data?.[0] || null);
+      } catch (err) {
+        console.error('Error fetching user details:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch user details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserDetails();
+  }, []);
+
+  return { userDetails, loading, error };
 };

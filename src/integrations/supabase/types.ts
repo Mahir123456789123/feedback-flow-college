@@ -669,6 +669,17 @@ export type Database = {
           name: string
         }[]
       }
+      get_current_user_details: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          additional_info: Json
+          department: string
+          email: string
+          name: string
+          record_id: string
+          user_type: string
+        }[]
+      }
       get_current_user_profile: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -692,6 +703,18 @@ export type Database = {
           code: string
           id: string
           name: string
+        }[]
+      }
+      get_students_by_department: {
+        Args: { dept_name?: string }
+        Returns: {
+          academic_year: string
+          department: string
+          email: string
+          id: string
+          name: string
+          semester: string
+          student_id: string
         }[]
       }
       get_subjects_by_department: {

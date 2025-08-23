@@ -12,6 +12,42 @@ export interface User {
   };
 }
 
+export interface Student {
+  id: string;
+  user_id: string;
+  student_id: string;
+  name: string;
+  email: string;
+  department: string;
+  semester?: string;
+  academic_year?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Teacher {
+  id: string;
+  user_id: string;
+  employee_id: string;
+  name: string;
+  email: string;
+  department: string;
+  specialization?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Admin {
+  id: string;
+  user_id: string;
+  employee_id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'controller';
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface AnswerSheet {
   id: string;
   studentId: string;
