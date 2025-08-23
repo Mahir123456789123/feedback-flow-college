@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string
+          email: string
+          employee_id: string
+          id: string
+          name: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          employee_id: string
+          id?: string
+          name: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          employee_id?: string
+          id?: string
+          name?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       answer_sheet_annotations: {
         Row: {
           annotation_type: string
@@ -503,6 +536,45 @@ export type Database = {
         }
         Relationships: []
       }
+      students: {
+        Row: {
+          academic_year: string | null
+          created_at: string
+          department: string
+          email: string
+          id: string
+          name: string
+          semester: string | null
+          student_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          academic_year?: string | null
+          created_at?: string
+          department: string
+          email: string
+          id?: string
+          name: string
+          semester?: string | null
+          student_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          academic_year?: string | null
+          created_at?: string
+          department?: string
+          email?: string
+          id?: string
+          name?: string
+          semester?: string | null
+          student_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subjects: {
         Row: {
           code: string
@@ -547,6 +619,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      teachers: {
+        Row: {
+          created_at: string
+          department: string
+          email: string
+          employee_id: string
+          id: string
+          name: string
+          specialization: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          email: string
+          employee_id: string
+          id?: string
+          name: string
+          specialization?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          email?: string
+          employee_id?: string
+          id?: string
+          name?: string
+          specialization?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
