@@ -35,15 +35,37 @@ const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamE
   }, [isOpen, preselectedExamId]);
 
   useEffect(() => {
-    const fetchStudents = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'student');
-      if (data) setStudents(data);
-    };
-    fetchStudents();
-  }, []);
+    if (isOpen) {
+      const fetchStudents = async () => {
+        const { data } = await supabase
+          .from('students')
+          .select('*');
+        if (data) setStudents(data);
+      };
+      fetchStudents();
+      
+      // Fetch already enrolled students if exam is selected
+      if (selectedExamId) {
+        fetchEnrolledStudents();
+      }
+    }
+  }, [isOpen, selectedExamId]);
+
+  const fetchEnrolledStudents = async () => {
+    if (!selectedExamId) return;
+    
+    const { data } = await supabase
+      .from('exam_enrollments')
+      .select(`
+        *,
+        student:students!exam_enrollments_student_id_fkey(*)
+      `)
+      .eq('exam_id', selectedExamId);
+    
+    if (data) {
+      setEnrolledStudents(data.map(enrollment => enrollment.student).filter(Boolean));
+    }
+  };
 
   const selectedExam = exams.find(exam => exam.id === selectedExamId);
   const availableStudents = students.filter(
@@ -77,19 +99,31 @@ const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamE
     }
   };
 
-  const handleRemoveStudent = (studentId: string) => {
-    const student = enrolledStudents.find(s => s.id === studentId);
-    setEnrolledStudents(enrolledStudents.filter(s => s.id !== studentId));
-    
-    // Remove answer sheet if uploaded
-    if (answerSheetUploads[studentId]) {
-      const newUploads = { ...answerSheetUploads };
-      delete newUploads[studentId];
-      setAnswerSheetUploads(newUploads);
-    }
-    
-    if (student) {
-      toast.success(`${student.name} removed from exam`);
+  const handleRemoveStudent = async (studentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('exam_enrollments')
+        .delete()
+        .eq('exam_id', selectedExamId)
+        .eq('student_id', studentId);
+      
+      if (error) throw error;
+      
+      const student = enrolledStudents.find(s => s.id === studentId);
+      setEnrolledStudents(enrolledStudents.filter(s => s.id !== studentId));
+      
+      // Remove answer sheet if uploaded
+      if (answerSheetUploads[studentId]) {
+        const newUploads = { ...answerSheetUploads };
+        delete newUploads[studentId];
+        setAnswerSheetUploads(newUploads);
+      }
+      
+      if (student) {
+        toast.success(`${student.name} removed from exam`);
+      }
+    } catch (error) {
+      toast.error('Failed to remove student');
     }
   };
 
@@ -236,11 +270,11 @@ const ExamEnrollmentDialog = ({ isOpen, onOpenChange, preselectedExamId }: ExamE
                         <SelectValue placeholder="Select student to add" />
                       </SelectTrigger>
                       <SelectContent>
-                        {availableStudents.map((student) => (
-                          <SelectItem key={student.id} value={student.id}>
-                            {student.name} - {student.email}
-                          </SelectItem>
-                        ))}
+                      {availableStudents.map((student) => (
+                        <SelectItem key={student.id} value={student.id}>
+                          {student.name} ({student.student_id}) - {student.email} ({student.department})
+                        </SelectItem>
+                      ))}
                       </SelectContent>
                     </Select>
                   </div>

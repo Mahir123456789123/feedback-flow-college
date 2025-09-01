@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Plus, Users, BookOpen, GraduationCap, FileText, Calendar, Star, Edit } from 'lucide-react';
 import AddExamDialog from './AddExamDialog';
 import EditExamDialog from './EditExamDialog';
+import ExamEnrollmentDialog from './ExamEnrollmentDialog';
 import ExamStudentAssignmentDialog from './ExamStudentAssignmentDialog';
 
 const AdminDashboard = () => {
@@ -23,6 +24,7 @@ const AdminDashboard = () => {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [isStudentAssignmentOpen, setIsStudentAssignmentOpen] = useState(false);
   const [selectedExamForStudents, setSelectedExamForStudents] = useState<any>(null);
+  const [isEnrollmentDialogOpen, setIsEnrollmentDialogOpen] = useState(false);
   
   // Fetch data from database
   const { departments, loading: deptLoading } = useDepartments();
@@ -115,6 +117,10 @@ const AdminDashboard = () => {
             <Plus className="h-4 w-4 mr-2" />
             Add Exam
           </Button>
+          <Button onClick={() => setIsEnrollmentDialogOpen(true)} variant="outline">
+            <Users className="h-4 w-4 mr-2" />
+            Enroll Students
+          </Button>
         </div>
       </div>
 
@@ -130,6 +136,10 @@ const AdminDashboard = () => {
         onOpenChange={setIsStudentAssignmentOpen}
         examId={selectedExamForStudents?.id || ''}
         examDetails={selectedExamForStudents}
+      />
+      <ExamEnrollmentDialog 
+        isOpen={isEnrollmentDialogOpen}
+        onOpenChange={setIsEnrollmentDialogOpen}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
