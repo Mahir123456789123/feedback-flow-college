@@ -44,14 +44,11 @@ const AddExamDialog = ({ isOpen, onOpenChange, onExamAdded }: AddExamDialogProps
   useState(() => {
     const fetchCurrentUser = async () => {
       if (user?.id) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
+        // Get current admin ID for created_by field
+        const { data } = await supabase.rpc('get_current_user_details');
         
-        if (data) {
-          setCurrentUserId(data.id);
+        if (data?.[0]?.record_id) {
+          setCurrentUserId(data[0].record_id);
         }
       }
     };

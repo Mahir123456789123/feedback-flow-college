@@ -68,17 +68,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
+      // Use the new get_current_user_details function
+      const { data, error } = await supabase.rpc('get_current_user_details');
       if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
+        console.error('Error fetching user details:', error);
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error fetching user details:', error);
     }
   };
 

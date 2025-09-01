@@ -131,7 +131,7 @@ export const useExams = () => {
           *,
           subject:subjects(name, code, department:departments(name)),
           exam_teacher_assignments(
-            teacher:teachers!exam_teacher_assignments_teacher_id_fkey(id, name),
+            teacher:teachers(id, name),
             assigned_questions,
             marks_per_question
           )
@@ -188,8 +188,8 @@ export const useAnswerSheets = (currentUserId?: string, role?: string) => {
             name,
             subject:subjects(name, department:departments(name))
           ),
-          student:students!answer_sheets_student_id_fkey(name, email),
-          grader:teachers!answer_sheets_graded_by_fkey(name)
+          student:students(name, email),
+          grader:teachers(name)
         `);
 
       // Filter based on role
@@ -283,10 +283,10 @@ export const useGrievances = (currentUserId?: string, role?: string) => {
                 name,
                 subject:subjects(name)
               ),
-              student:students!answer_sheets_student_id_fkey(name)
+              student:students(name)
             ),
-            student:students!grievances_student_id_fkey(name),
-            reviewer:teachers!grievances_reviewed_by_fkey(name)
+            student:students(name),
+            reviewer:teachers(name)
           `);
 
         // Filter based on role
