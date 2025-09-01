@@ -19,18 +19,14 @@ const TeacherDashboard = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Get current user profile ID
+  // Get current teacher ID from teachers table
   useEffect(() => {
     const fetchCurrentUser = async () => {
       if (user?.id) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
+        const { data } = await supabase.rpc('get_current_user_details');
         
-        if (data) {
-          setCurrentUserId(data.id);
+        if (data?.[0]?.record_id && data[0].user_type === 'teacher') {
+          setCurrentUserId(data[0].record_id);
         }
       }
     };
