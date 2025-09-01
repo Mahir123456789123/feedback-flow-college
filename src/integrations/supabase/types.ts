@@ -326,7 +326,7 @@ export type Database = {
             foreignKeyName: "exam_teacher_assignments_teacher_id_fkey"
             columns: ["teacher_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "teachers"
             referencedColumns: ["id"]
           },
         ]
