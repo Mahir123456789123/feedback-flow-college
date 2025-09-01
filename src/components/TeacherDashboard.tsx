@@ -23,10 +23,15 @@ const TeacherDashboard = () => {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       if (user?.id) {
+        console.log('Fetching user details for:', user.id);
         const { data } = await supabase.rpc('get_current_user_details');
         
+        console.log('User details response:', data);
         if (data?.[0]?.record_id && data[0].user_type === 'teacher') {
+          console.log('Setting teacher ID:', data[0].record_id);
           setCurrentUserId(data[0].record_id);
+        } else {
+          console.log('User is not a teacher or no record found');
         }
       }
     };
@@ -34,9 +39,15 @@ const TeacherDashboard = () => {
   }, [user?.id]);
 
   // Fetch real data from database
+  console.log('Teacher Dashboard - currentUserId:', currentUserId);
+  console.log('Teacher Dashboard - user role:', user?.user_metadata?.role);
+  
   const { answerSheets, loading: answersLoading } = useAnswerSheets(currentUserId || undefined, user?.user_metadata?.role);
   const { grievances, loading: grievancesLoading, updateGrievanceStatus } = useGrievances(currentUserId || undefined, user?.user_metadata?.role);
   const { teacherExams, loading: examsLoading } = useTeacherExams(currentUserId || undefined);
+
+  console.log('Teacher exams:', teacherExams);
+  console.log('Loading states - exams:', examsLoading, 'answers:', answersLoading);
 
   // Filter data
   const pendingPapers = answerSheets.filter(sheet => sheet.grading_status === 'pending');

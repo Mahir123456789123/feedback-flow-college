@@ -125,19 +125,37 @@ export const useExams = () => {
   const fetchExams = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Simplified query that works with our RLS policies
+      const { data: examsData, error: examsError } = await supabase
         .from('exams')
-        .select(`
-          *,
-          subject:subjects(name, code, department:departments(name)),
-          exam_teacher_assignments(
-            teacher:teachers(id, name),
-            assigned_questions,
-            marks_per_question
-          )
-        `);
-      if (error) throw error;
-      setExams(data || []);
+        .select('*');
+      
+      if (examsError) throw examsError;
+      
+      // Get subjects separately
+      const { data: subjects } = await supabase
+        .from('subjects')
+        .select('*, department:departments(*)');
+      
+      // Get assignments separately  
+      const { data: assignments } = await supabase
+        .from('exam_teacher_assignments')
+        .select('*, teacher:teachers(*)');
+      
+      // Combine the data manually
+      const enrichedExams = examsData.map(exam => {
+        const subject = subjects?.find(s => s.id === exam.subject_id);
+        const examAssignments = assignments?.filter(a => a.exam_id === exam.id) || [];
+        
+        return {
+          ...exam,
+          subject,
+          exam_teacher_assignments: examAssignments
+        };
+      });
+      
+      setExams(enrichedExams || []);
     } catch (err) {
       console.error('Error fetching exams:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch exams');
@@ -379,10 +397,15 @@ export const useTeacherExams = (teacherId?: string) => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchTeacherExams = async () => {
-    if (!teacherId) return;
+    if (!teacherId) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
+      
+      // Direct query that should work
       const { data, error } = await supabase
         .from('exam_teacher_assignments')
         .select(`
@@ -394,7 +417,12 @@ export const useTeacherExams = (teacherId?: string) => {
         `)
         .eq('teacher_id', teacherId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      
+      console.log('Fetched teacher exams:', data);
       setTeacherExams(data || []);
     } catch (err) {
       console.error('Error fetching teacher exams:', err);
