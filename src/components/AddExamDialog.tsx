@@ -127,6 +127,12 @@ const AddExamDialog = ({ isOpen, onOpenChange, onExamAdded }: AddExamDialogProps
     }
 
     try {
+      // Check if we have a valid user ID
+      if (!currentUserId) {
+        toast.error('Unable to identify current user. Please try logging in again.');
+        return;
+      }
+
       // Create exam
       const { data: exam, error: examError } = await supabase
         .from('exams')
@@ -139,7 +145,7 @@ const AddExamDialog = ({ isOpen, onOpenChange, onExamAdded }: AddExamDialogProps
           total_marks: parseInt(examData.totalMarks),
           instructions: examData.instructions,
           status: 'scheduled',
-          created_by: currentUserId || 'admin'
+          created_by: currentUserId
         })
         .select()
         .single();
