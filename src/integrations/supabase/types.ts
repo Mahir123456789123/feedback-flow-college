@@ -385,13 +385,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "exams_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "exams_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
