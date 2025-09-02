@@ -9,11 +9,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDepartments, useTeachers, useSubjects, useExams } from '@/hooks/useDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Users, BookOpen, GraduationCap, FileText, Calendar, Star, Edit } from 'lucide-react';
+import { Plus, Users, BookOpen, GraduationCap, FileText, Calendar, Star, Edit, Upload } from 'lucide-react';
 import AddExamDialog from './AddExamDialog';
 import EditExamDialog from './EditExamDialog';
 import ExamEnrollmentDialog from './ExamEnrollmentDialog';
 import ExamStudentAssignmentDialog from './ExamStudentAssignmentDialog';
+import FileUploadManager from './FileUploadManager';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -121,6 +122,10 @@ const AdminDashboard = () => {
             <Users className="h-4 w-4 mr-2" />
             Enroll Students
           </Button>
+          <Button onClick={() => setActiveTab('files')} variant="outline">
+            <Upload className="h-4 w-4 mr-2" />
+            Manage Files
+          </Button>
         </div>
       </div>
 
@@ -143,11 +148,12 @@ const AdminDashboard = () => {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="departments">Departments</TabsTrigger>
           <TabsTrigger value="teachers">Teachers</TabsTrigger>
           <TabsTrigger value="exams">Exams</TabsTrigger>
+          <TabsTrigger value="files">Files</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -406,6 +412,10 @@ const AdminDashboard = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="files" className="space-y-4">
+          <FileUploadManager />
         </TabsContent>
       </Tabs>
     </div>
