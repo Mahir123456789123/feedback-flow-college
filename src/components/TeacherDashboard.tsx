@@ -11,8 +11,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAnswerSheets, useGrievances, useTeacherExams } from '@/hooks/useDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { FileText, CheckCircle, Clock, Eye, MessageSquare, AlertTriangle, Star } from 'lucide-react';
+import { FileText, CheckCircle, Clock, Eye, MessageSquare, AlertTriangle, Star, Upload } from 'lucide-react';
 import PaperCheckingInterface from './PaperCheckingInterface';
+import UploadedAnswerSheets from './UploadedAnswerSheets';
 
 const TeacherDashboard = () => {
   const { user } = useAuth();
@@ -118,6 +119,10 @@ const TeacherDashboard = () => {
           <TabsTrigger value="grading" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
             Paper Grading
+          </TabsTrigger>
+          <TabsTrigger value="uploaded-sheets" className="flex items-center gap-2">
+            <Upload className="w-4 h-4" />
+            Uploaded Sheets
           </TabsTrigger>
           <TabsTrigger value="grievances" className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
@@ -269,6 +274,29 @@ const TeacherDashboard = () => {
 
         <TabsContent value="grading" className="space-y-4">
           <PaperCheckingInterface />
+        </TabsContent>
+
+        <TabsContent value="uploaded-sheets" className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Uploaded Answer Sheets by Exam</h2>
+            <div className="space-y-6">
+              {teacherExams.map((assignment) => (
+                <UploadedAnswerSheets
+                  key={assignment.exam.id}
+                  examId={assignment.exam.id}
+                  examName={assignment.exam.name}
+                />
+              ))}
+              {teacherExams.length === 0 && (
+                <Card>
+                  <CardContent className="p-6 text-center text-muted-foreground">
+                    <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No exams assigned to you yet</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="grievances" className="space-y-4">
