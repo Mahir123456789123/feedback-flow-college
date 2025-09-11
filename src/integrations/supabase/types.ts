@@ -242,13 +242,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_answer_sheets_exam"
-            columns: ["exam_id"]
-            isOneToOne: false
-            referencedRelation: "exams"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_answer_sheets_student"
             columns: ["student_id"]
             isOneToOne: false
@@ -506,13 +499,6 @@ export type Database = {
           updated_marks?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_grievances_answer_sheet"
-            columns: ["answer_sheet_id"]
-            isOneToOne: false
-            referencedRelation: "answer_sheets"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "fk_grievances_student"
             columns: ["student_id"]
