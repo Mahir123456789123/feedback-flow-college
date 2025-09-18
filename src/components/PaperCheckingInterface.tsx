@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnswerSheets } from '@/hooks/useDatabase';
 import { supabase } from '@/integrations/supabase/client';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { FileText, Save, Plus, Minus, Eye, Upload, Check, X, PenTool, MessageCircle } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -323,28 +324,30 @@ const PaperCheckingInterface = () => {
                 <CardContent>
                   <div className="space-y-4">
                     {/* Quick grade inputs for common questions */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {[1, 2, 3, 4, 5, 6].map((questionNumber) => (
-                        <div key={questionNumber} className="space-y-2">
-                          <Label>Question {questionNumber}</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              type="number"
-                              placeholder="Marks"
-                              value={marks[questionNumber] || ''}
-                              onChange={(e) => handleQuestionMarks(questionNumber.toString(), parseFloat(e.target.value) || 0)}
-                              className="w-20"
-                            />
-                            <Input
-                              placeholder="Comment (optional)"
-                              value={comments[questionNumber] || ''}
-                              onChange={(e) => handleQuestionComment(questionNumber.toString(), e.target.value)}
-                              className="flex-1"
-                            />
+                    <ScrollArea className="h-96 pr-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Array.from({ length: 20 }, (_, i) => i + 1).map((questionNumber) => (
+                          <div key={questionNumber} className="space-y-2">
+                            <Label>Question {questionNumber}</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                type="number"
+                                placeholder="Marks"
+                                value={marks[questionNumber] || ''}
+                                onChange={(e) => handleQuestionMarks(questionNumber.toString(), parseFloat(e.target.value) || 0)}
+                                className="w-20"
+                              />
+                              <Input
+                                placeholder="Comment (optional)"
+                                value={comments[questionNumber] || ''}
+                                onChange={(e) => handleQuestionComment(questionNumber.toString(), e.target.value)}
+                                className="flex-1"
+                              />
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
 
                     <div className="flex justify-between items-center pt-4 border-t">
                       <div className="text-lg font-semibold">
