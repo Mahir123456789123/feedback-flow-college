@@ -37,23 +37,46 @@ const PaperCheckingInterface = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Get current user profile ID
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      if (user?.id) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
+  // useEffect(() => {
+  //   const fetchCurrentUser = async () => {
+  //     if (user?.id) {
+  //       const { data } = await supabase
+  //         .from('profiles')
+  //         .select('id')
+  //         .eq('user_id', user.id)
+  //         .single();
         
-        if (data) {
-          setCurrentUserId(data.id);
-        }
-      }
-    };
-    fetchCurrentUser();
-  }, [user?.id]);
+  //       if (data) {
+  //         setCurrentUserId(data.id);
+  //       }
+  //     }
+  //   };
+  //   fetchCurrentUser();
+  // }, [user?.id]);
 
+
+// Get current teacher ID
+useEffect(() => {
+  const fetchCurrentTeacher = async () => {
+    if (user?.id) {
+      const { data, error } = await supabase
+        .from('teachers')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data && !error) {
+        setCurrentUserId(data.id);
+      } else {
+        console.error('Teacher not found:', error);
+        // Handle case where user is not a teacher
+        toast.error('Teacher profile not found. Please contact administrator.');
+      }
+    }
+  };
+  
+  fetchCurrentTeacher();
+}, [user?.id]);
   // Fetch answer sheets assigned to current teacher
   const { answerSheets, loading } = useAnswerSheets(currentUserId || undefined, user?.user_metadata?.role);
 
