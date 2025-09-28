@@ -155,7 +155,10 @@ const UploadedAnswerSheets = ({ examId, examName }: UploadedAnswerSheetsProps) =
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open(getFileUrl(sheet.file_url), '_blank')}
+                    onClick={() => {
+                      const url = getFileUrl(sheet.file_url);
+                      window.open(url, '_blank');
+                    }}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>

@@ -20,7 +20,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
 // Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 const PaperCheckingInterface = () => {
   const { user } = useAuth();
@@ -34,6 +34,7 @@ const PaperCheckingInterface = () => {
   const [annotations, setAnnotations] = useState<any[]>([]);
   const [annotationMode, setAnnotationMode] = useState<'none' | 'mark' | 'comment'>('none');
   const [totalObtainedMarks, setTotalObtainedMarks] = useState<number>(0);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Get current user profile ID
@@ -86,6 +87,33 @@ useEffect(() => {
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
     setPageNumber(1);
+    setPdfError(null);
+  };
+
+  const onDocumentLoadError = (error: Error) => {
+    console.error('PDF load error:', error);
+    setPdfError('Failed to load PDF. Please check the file and try again.');
+  };
+
+  const getPdfUrl = (fileUrl: string) => {
+    if (!fileUrl) {
+      console.log('No file URL provided, using sample PDF');
+      return '/sample-answer-sheet.pdf';
+    }
+    
+    // If it's already a full URL, return it
+    if (fileUrl.startsWith('http')) {
+      console.log('Using full URL:', fileUrl);
+      return fileUrl;
+    }
+    
+    // If it's a Supabase storage path, get the public URL
+    const { data } = supabase.storage
+      .from('answer-sheets')
+      .getPublicUrl(fileUrl);
+    
+    console.log('Generated Supabase URL:', data.publicUrl);
+    return data.publicUrl;
   };
 
   const changePage = (offset: number) => {
@@ -321,18 +349,41 @@ useEffect(() => {
                         onClick={handleCanvasClick}
                         style={{ display: annotationMode !== 'none' ? 'block' : 'none' }}
                       />
-                      <Document
-                        file={selectedPaper.file_url || '/sample-answer-sheet.pdf'}
-                        onLoadSuccess={onDocumentLoadSuccess}
-                        className="flex justify-center"
-                      >
-                        <Page
-                          pageNumber={pageNumber}
-                          scale={scale}
-                          renderTextLayer={false}
-                          renderAnnotationLayer={false}
-                        />
-                      </Document>
+                      {pdfError ? (
+                        <div className="flex flex-col items-center justify-center p-8 text-center">
+                          <FileText className="w-16 h-16 text-muted-foreground mb-4" />
+                          <p className="text-red-500 mb-2">Error loading PDF</p>
+                          <p className="text-sm text-muted-foreground">{pdfError}</p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setPdfError(null)}
+                            className="mt-4"
+                          >
+                            Retry
+                          </Button>
+                        </div>
+                      ) : (
+                        <Document
+                          file={getPdfUrl(selectedPaper.file_url)}
+                          onLoadSuccess={onDocumentLoadSuccess}
+                          onLoadError={onDocumentLoadError}
+                          className="flex justify-center"
+                          loading={
+                            <div className="flex items-center justify-center p-8">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                              <span className="ml-2">Loading PDF...</span>
+                            </div>
+                          }
+                        >
+                          <Page
+                            pageNumber={pageNumber}
+                            scale={scale}
+                            renderTextLayer={false}
+                            renderAnnotationLayer={false}
+                          />
+                        </Document>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -387,10 +438,75 @@ useEffect(() => {
             </>
           ) : (
             <Card>
-              <CardContent className="py-12 text-center">
-                <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Select a Paper to Grade</h3>
-                <p className="text-muted-foreground">Choose a paper from the list to start grading</p>
+              <CardHeader>
+                <CardTitle>Sample Answer Sheet</CardTitle>
+                <CardDescription>Select a paper from the list to start grading, or view the sample below</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* PDF Controls */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={() => changePage(-1)} disabled={pageNumber <= 1}>
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <span className="text-sm">
+                        Page {pageNumber} of {numPages}
+                      </span>
+                      <Button size="sm" onClick={() => changePage(1)} disabled={pageNumber >= numPages}>
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={() => changeScale(scale - 0.1)}>
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <span className="text-sm">{Math.round(scale * 100)}%</span>
+                      <Button size="sm" onClick={() => changeScale(scale + 0.1)}>
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Sample PDF Display */}
+                  <div className="relative border rounded-lg overflow-hidden">
+                    {pdfError ? (
+                      <div className="flex flex-col items-center justify-center p-8 text-center">
+                        <FileText className="w-16 h-16 text-muted-foreground mb-4" />
+                        <p className="text-red-500 mb-2">Error loading PDF</p>
+                        <p className="text-sm text-muted-foreground">{pdfError}</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setPdfError(null)}
+                          className="mt-4"
+                        >
+                          Retry
+                        </Button>
+                      </div>
+                    ) : (
+                      <Document
+                        file="/sample-answer-sheet.pdf"
+                        onLoadSuccess={onDocumentLoadSuccess}
+                        onLoadError={onDocumentLoadError}
+                        className="flex justify-center"
+                        loading={
+                          <div className="flex items-center justify-center p-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            <span className="ml-2">Loading PDF...</span>
+                          </div>
+                        }
+                      >
+                        <Page
+                          pageNumber={pageNumber}
+                          scale={scale}
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false}
+                        />
+                      </Document>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
