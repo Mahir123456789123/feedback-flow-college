@@ -188,13 +188,13 @@ export const useExams = () => {
   return { exams, loading, error, refetch: fetchExams };
 };
 
-export const useAnswerSheets = (currentUserId?: string, role?: string) => {
+export const useAnswerSheets = (currentStudentId?: string, role?: string) => {
   const [answerSheets, setAnswerSheets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAnswerSheets = async () => {
-    if (!currentUserId) return;
+    if (!currentStudentId) return;
     
     try {
       setLoading(true);
@@ -212,21 +212,18 @@ export const useAnswerSheets = (currentUserId?: string, role?: string) => {
 
       // Filter based on role
       if (role === 'student') {
-        const { data: studentData } = await supabase
-          .from('students')
-          .select('id')
-          .eq('user_id', currentUserId)
-          .maybeSingle();
-        
-        if (studentData) {
-          query = query.eq('student_id', studentData.id);
-        }
+        // currentStudentId is already the student ID, so use it directly
+        query = query.eq('student_id', currentStudentId);
       } else if (role === 'teacher') {
         // Teachers only see sheets assigned to them
+        // For teachers, we need to get the user ID from auth context
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
         const { data: teacherData } = await supabase
           .from('teachers')
           .select('id')
-          .eq('user_id', currentUserId)
+          .eq('user_id', user.id)
           .maybeSingle();
           
         if (teacherData) {
@@ -277,19 +274,19 @@ export const useAnswerSheets = (currentUserId?: string, role?: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentUserId, role]);
+  }, [currentStudentId, role]);
 
   return { answerSheets, loading, error, refetch: fetchAnswerSheets };
 };
 
-export const useGrievances = (currentUserId?: string, role?: string) => {
+export const useGrievances = (currentStudentId?: string, role?: string) => {
   const [grievances, setGrievances] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchGrievances = async () => {
-      if (!currentUserId) return;
+      if (!currentStudentId) return;
       
       try {
         let query = supabase
@@ -309,21 +306,18 @@ export const useGrievances = (currentUserId?: string, role?: string) => {
 
         // Filter based on role
         if (role === 'student') {
-          const { data: studentData } = await supabase
-            .from('students')
-            .select('id')
-            .eq('user_id', currentUserId)
-            .maybeSingle();
-          
-          if (studentData) {
-            query = query.eq('student_id', studentData.id);
-          }
+          // currentStudentId is already the student ID, so use it directly
+          query = query.eq('student_id', currentStudentId);
         } else if (role === 'teacher') {
           // Teachers see grievances for papers they grade
+          // For teachers, we need to get the user ID from auth context
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          
           const { data: teacherData } = await supabase
             .from('teachers')
             .select('id')
-            .eq('user_id', currentUserId)
+            .eq('user_id', user.id)
             .maybeSingle();
             
           if (teacherData) {
@@ -358,15 +352,27 @@ export const useGrievances = (currentUserId?: string, role?: string) => {
     };
 
     fetchGrievances();
-  }, [currentUserId, role]);
+  }, [currentStudentId, role]);
 
   const updateGrievanceStatus = async (grievanceId: string, status: string, response?: string, updatedMarks?: number) => {
     try {
+      // Get current teacher ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
+      const { data: teacherData } = await supabase
+        .from('teachers')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!teacherData) throw new Error('Teacher not found');
+      
       const updates: any = { status };
       if (response) updates.teacher_response = response;
       if (updatedMarks !== undefined) updates.updated_marks = updatedMarks;
       updates.reviewed_at = new Date().toISOString();
-      updates.reviewed_by = currentUserId;
+      updates.reviewed_by = teacherData.id;
 
       const { error } = await supabase
         .from('grievances')
