@@ -31,6 +31,7 @@ import {
   Eye,
   MessageSquare,
 } from "lucide-react";
+import StudentAnswerSheetViewer from "./StudentAnswerSheetViewer";
 
 const StudentDashboard = () => {
   const { user } = useAuth();
@@ -40,6 +41,8 @@ const StudentDashboard = () => {
   const [subQuestionNumber, setSubQuestionNumber] = useState("");
   const [currentMarks, setCurrentMarks] = useState("");
   const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
+  const [viewingSheet, setViewingSheet] = useState<any>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   // Get current student ID
   useEffect(() => {
@@ -283,7 +286,14 @@ const StudentDashboard = () => {
                       {new Date(sheet.upload_date).toLocaleDateString()}
                     </span>
                   </div>
-                  <Button variant="outline" className="w-full mt-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-3"
+                    onClick={() => {
+                      setViewingSheet(sheet);
+                      setViewerOpen(true);
+                    }}
+                  >
                     <Eye className="w-4 h-4 mr-2" />
                     View Answer Sheet
                   </Button>
@@ -356,6 +366,12 @@ const StudentDashboard = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <StudentAnswerSheetViewer
+        answerSheet={viewingSheet}
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+      />
     </div>
   );
 };

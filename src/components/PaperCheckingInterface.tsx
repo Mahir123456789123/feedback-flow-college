@@ -18,12 +18,18 @@ import { FileText, Save, Plus, Minus, Eye, Upload, Check, X, PenTool, MessageCir
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
+import { Pen, Eraser, Type, Square, Circle, Undo } from 'lucide-react';
 
 // Set up PDF.js worker using jsDelivr CDN for proper CORS support
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const PaperCheckingInterface = () => {
   const { user } = useAuth();
+  const canvasRefs = useRef<{ [key: number]: HTMLCanvasElement | null }>({});
+  const fabricCanvases = useRef<{ [key: number]: FabricCanvas | null }>({});
+  const [activeTool, setActiveTool] = useState<'pen' | 'eraser' | 'text' | 'rectangle' | 'circle'>('pen');
+  const [annotationColor, setAnnotationColor] = useState('#FF0000');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedPaper, setSelectedPaper] = useState<any>(null);
   const [numPages, setNumPages] = useState<number>(0);
@@ -83,6 +89,121 @@ useEffect(() => {
 
   // Filter only pending/ungraded papers
   const pendingPapers = answerSheets.filter(sheet => sheet.grading_status === 'pending');
+
+  // Load annotations when paper is selected
+  useEffect(() => {
+    if (selectedPaper) {
+      loadAnnotationsFromDB();
+    }
+  }, [selectedPaper]);
+
+  const loadAnnotationsFromDB = async () => {
+    if (!selectedPaper) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('answer_sheet_annotations')
+        .select('*')
+        .eq('answer_sheet_id', selectedPaper.id);
+      
+      if (error) throw error;
+      setAnnotations(data || []);
+    } catch (error) {
+      console.error('Error loading annotations:', error);
+    }
+  };
+
+  const saveAnnotationsToDB = async () => {
+    if (!selectedPaper || !currentUserId) {
+      toast.error('Cannot save annotations');
+      return;
+    }
+    
+    try {
+      const annotationData: any[] = [];
+      
+      // Collect all canvas objects
+      Object.entries(fabricCanvases.current).forEach(([pageNum, canvas]) => {
+        if (canvas) {
+          const objects = canvas.getObjects();
+          objects.forEach((obj: any) => {
+            annotationData.push({
+              answer_sheet_id: selectedPaper.id,
+              page_number: parseInt(pageNum),
+              annotation_type: obj.type || 'path',
+              x_position: obj.left || 0,
+              y_position: obj.top || 0,
+              content: JSON.stringify({
+                width: obj.width,
+                height: obj.height,
+                scaleX: obj.scaleX,
+                scaleY: obj.scaleY,
+                fill: obj.fill,
+                stroke: obj.stroke,
+                strokeWidth: obj.strokeWidth,
+                path: obj.path
+              }),
+              color: obj.stroke || obj.fill || annotationColor,
+              created_by: currentUserId
+            });
+          });
+        }
+      });
+      
+      // Delete existing annotations
+      await supabase
+        .from('answer_sheet_annotations')
+        .delete()
+        .eq('answer_sheet_id', selectedPaper.id);
+      
+      // Insert new annotations
+      if (annotationData.length > 0) {
+        const { error } = await supabase
+          .from('answer_sheet_annotations')
+          .insert(annotationData);
+        
+        if (error) throw error;
+      }
+      
+      toast.success('Annotations saved successfully');
+    } catch (error) {
+      console.error('Error saving annotations:', error);
+      toast.error('Failed to save annotations');
+    }
+  };
+
+  const initializeFabricCanvas = (pageNum: number) => {
+    const canvasEl = canvasRefs.current[pageNum];
+    if (!canvasEl || fabricCanvases.current[pageNum]) return;
+    
+    const fabricCanvas = new FabricCanvas(canvasEl, {
+      isDrawingMode: activeTool === 'pen',
+      width: 800,
+      height: 1100,
+    });
+    
+    if (fabricCanvas.freeDrawingBrush) {
+      fabricCanvas.freeDrawingBrush.color = annotationColor;
+      fabricCanvas.freeDrawingBrush.width = 2;
+    }
+    
+    fabricCanvases.current[pageNum] = fabricCanvas;
+    
+    // Load existing annotations for this page
+    const pageAnnotations = annotations.filter(ann => ann.page_number === pageNum);
+    // Note: Full reconstruction of paths would require storing complete path data
+  };
+
+  useEffect(() => {
+    const canvas = fabricCanvases.current[pageNumber];
+    if (canvas) {
+      canvas.isDrawingMode = activeTool === 'pen' || activeTool === 'eraser';
+      if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = activeTool === 'eraser' ? '#FFFFFF' : annotationColor;
+        canvas.freeDrawingBrush.width = activeTool === 'eraser' ? 20 : 2;
+      }
+    }
+  }, [activeTool, annotationColor, pageNumber]);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -293,24 +414,46 @@ useEffect(() => {
               {/* PDF Viewer */}
               <Card>
                 <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Answer Sheet: {selectedPaper.student?.name}</CardTitle>
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center">
+                      <CardTitle>Answer Sheet: {selectedPaper.student?.name}</CardTitle>
+                    </div>
+                    
+                    {/* Annotation Toolbar */}
+                    <div className="flex items-center gap-2 p-2 bg-muted rounded-lg flex-wrap">
                       <Button
-                        variant="outline"
                         size="sm"
-                        onClick={() => setAnnotationMode(annotationMode === 'mark' ? 'none' : 'mark')}
-                        className={annotationMode === 'mark' ? 'bg-red-100' : ''}
+                        variant={activeTool === 'pen' ? 'default' : 'outline'}
+                        onClick={() => setActiveTool('pen')}
+                        title="Draw"
                       >
-                        <PenTool className="w-4 h-4" />
+                        <Pen className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant="outline"
                         size="sm"
-                        onClick={() => setAnnotationMode(annotationMode === 'comment' ? 'none' : 'comment')}
-                        className={annotationMode === 'comment' ? 'bg-blue-100' : ''}
+                        variant={activeTool === 'eraser' ? 'default' : 'outline'}
+                        onClick={() => setActiveTool('eraser')}
+                        title="Erase"
                       >
-                        <MessageCircle className="w-4 h-4" />
+                        <Eraser className="h-4 w-4" />
+                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs">Color:</Label>
+                        <input
+                          type="color"
+                          value={annotationColor}
+                          onChange={(e) => setAnnotationColor(e.target.value)}
+                          className="w-10 h-8 rounded cursor-pointer border"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={saveAnnotationsToDB}
+                        title="Save annotations"
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        Save
                       </Button>
                     </div>
                   </div>
@@ -341,14 +484,8 @@ useEffect(() => {
                       </div>
                     </div>
 
-                    {/* PDF Display */}
-                    <div className="relative border rounded-lg overflow-hidden">
-                      <canvas
-                        ref={canvasRef}
-                        className="absolute top-0 left-0 z-10 cursor-crosshair"
-                        onClick={handleCanvasClick}
-                        style={{ display: annotationMode !== 'none' ? 'block' : 'none' }}
-                      />
+                    {/* PDF Display with Annotation Canvas */}
+                    <div className="relative border rounded-lg overflow-hidden bg-white">
                       {pdfError ? (
                         <div className="flex flex-col items-center justify-center p-8 text-center">
                           <FileText className="w-16 h-16 text-muted-foreground mb-4" />
@@ -364,25 +501,35 @@ useEffect(() => {
                           </Button>
                         </div>
                       ) : (
-                        <Document
-                          file={getPdfUrl(selectedPaper.file_url)}
-                          onLoadSuccess={onDocumentLoadSuccess}
-                          onLoadError={onDocumentLoadError}
-                          className="flex justify-center"
-                          loading={
-                            <div className="flex items-center justify-center p-8">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                              <span className="ml-2">Loading PDF...</span>
-                            </div>
-                          }
-                        >
-                          <Page
-                            pageNumber={pageNumber}
-                            scale={scale}
-                            renderTextLayer={false}
-                            renderAnnotationLayer={false}
+                        <>
+                          <Document
+                            file={getPdfUrl(selectedPaper.file_url)}
+                            onLoadSuccess={onDocumentLoadSuccess}
+                            onLoadError={onDocumentLoadError}
+                            className="flex justify-center"
+                            loading={
+                              <div className="flex items-center justify-center p-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                <span className="ml-2">Loading PDF...</span>
+                              </div>
+                            }
+                          >
+                            <Page
+                              pageNumber={pageNumber}
+                              scale={scale}
+                              renderTextLayer={false}
+                              renderAnnotationLayer={false}
+                              onRenderSuccess={() => initializeFabricCanvas(pageNumber)}
+                            />
+                          </Document>
+                          <canvas
+                            ref={(el) => {
+                              if (el) canvasRefs.current[pageNumber] = el;
+                            }}
+                            className="absolute top-0 left-0 pointer-events-auto"
+                            style={{ zIndex: 10 }}
                           />
-                        </Document>
+                        </>
                       )}
                     </div>
                   </div>
