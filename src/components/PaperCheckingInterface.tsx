@@ -14,12 +14,12 @@ import { useAnswerSheets } from '@/hooks/useDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { FileText, Save, Plus, Minus, Eye, Upload, Check, X, PenTool, MessageCircle } from 'lucide-react';
+import { FileText, Save, Plus, Minus, Eye, Upload, Check, X as XIcon, PenTool, MessageCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
-import { Canvas as FabricCanvas, PencilBrush } from 'fabric';
-import { Pen, Eraser, Type, Square, Circle, Undo } from 'lucide-react';
+import { Canvas as FabricCanvas, Path, Ellipse, IText, Rect } from 'fabric';
+import { Pen, Eraser, Type, Circle as CircleIcon } from 'lucide-react';
 
 // Set up PDF.js worker using jsDelivr CDN for proper CORS support
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -28,8 +28,8 @@ const PaperCheckingInterface = () => {
   const { user } = useAuth();
   const canvasRefs = useRef<{ [key: number]: HTMLCanvasElement | null }>({});
   const fabricCanvases = useRef<{ [key: number]: FabricCanvas | null }>({});
-  const [activeTool, setActiveTool] = useState<'pen' | 'eraser' | 'text' | 'rectangle' | 'circle'>('pen');
-  const [annotationColor, setAnnotationColor] = useState('#FF0000');
+  const [activeTool, setActiveTool] = useState<'pen' | 'eraser' | 'tick' | 'cross' | 'oval' | 'textbox'>('pen');
+  const [annotationColor] = useState('#FF0000'); // Fixed to red
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedPaper, setSelectedPaper] = useState<any>(null);
   const [numPages, setNumPages] = useState<number>(0);
@@ -192,6 +192,88 @@ useEffect(() => {
     // Load existing annotations for this page
     const pageAnnotations = annotations.filter(ann => ann.page_number === pageNum);
     // Note: Full reconstruction of paths would require storing complete path data
+  };
+
+  const addPresetAnnotation = (type: 'tick' | 'cross' | 'oval' | 'textbox') => {
+    const canvas = fabricCanvases.current[pageNumber];
+    if (!canvas) return;
+
+    const redColor = '#FF0000';
+    const centerX = canvas.width! / 2;
+    const centerY = canvas.height! / 2;
+
+    switch (type) {
+      case 'tick':
+        // Draw a checkmark using Path
+        const tickPath = new Path('M 10 50 L 40 80 L 90 20', {
+          stroke: redColor,
+          strokeWidth: 6,
+          fill: '',
+          left: centerX - 50,
+          top: centerY - 50,
+          selectable: true,
+          strokeLineCap: 'round',
+          strokeLineJoin: 'round'
+        });
+        canvas.add(tickPath);
+        break;
+
+      case 'cross':
+        // Draw an X using two paths
+        const crossPath1 = new Path('M 20 20 L 80 80', {
+          stroke: redColor,
+          strokeWidth: 6,
+          fill: '',
+          left: centerX - 50,
+          top: centerY - 50,
+          selectable: true,
+          strokeLineCap: 'round'
+        });
+        const crossPath2 = new Path('M 80 20 L 20 80', {
+          stroke: redColor,
+          strokeWidth: 6,
+          fill: '',
+          left: centerX - 50,
+          top: centerY - 50,
+          selectable: true,
+          strokeLineCap: 'round'
+        });
+        canvas.add(crossPath1, crossPath2);
+        break;
+
+      case 'oval':
+        // Draw an oval/ellipse
+        const oval = new Ellipse({
+          left: centerX - 40,
+          top: centerY - 30,
+          rx: 40,
+          ry: 30,
+          fill: 'transparent',
+          stroke: redColor,
+          strokeWidth: 3,
+          selectable: true
+        });
+        canvas.add(oval);
+        break;
+
+      case 'textbox':
+        // Add an editable text box
+        const textbox = new IText('Text', {
+          left: centerX - 50,
+          top: centerY - 20,
+          fill: redColor,
+          fontSize: 24,
+          fontFamily: 'Arial',
+          selectable: true,
+          editable: true
+        });
+        canvas.add(textbox);
+        canvas.setActiveObject(textbox);
+        textbox.enterEditing();
+        break;
+    }
+
+    canvas.renderAll();
   };
 
   useEffect(() => {
@@ -437,15 +519,61 @@ useEffect(() => {
                       >
                         <Eraser className="h-4 w-4" />
                       </Button>
-                      <div className="flex items-center gap-2">
-                        <Label className="text-xs">Color:</Label>
-                        <input
-                          type="color"
-                          value={annotationColor}
-                          onChange={(e) => setAnnotationColor(e.target.value)}
-                          className="w-10 h-8 rounded cursor-pointer border"
-                        />
-                      </div>
+                      
+                      <div className="w-px h-6 bg-border" />
+                      
+                      {/* Preset Annotations (Red Only) */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setActiveTool('tick');
+                          addPresetAnnotation('tick');
+                        }}
+                        title="Add Tick Mark (Red)"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setActiveTool('cross');
+                          addPresetAnnotation('cross');
+                        }}
+                        title="Add Cross Mark (Red)"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <XIcon className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setActiveTool('oval');
+                          addPresetAnnotation('oval');
+                        }}
+                        title="Add Oval (Red)"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <CircleIcon className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setActiveTool('textbox');
+                          addPresetAnnotation('textbox');
+                        }}
+                        title="Add Text Box (Red)"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Type className="h-4 w-4" />
+                      </Button>
+                      
+                      <div className="w-px h-6 bg-border" />
+                      
                       <Button
                         size="sm"
                         variant="outline"
