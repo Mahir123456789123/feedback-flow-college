@@ -30,17 +30,17 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-card border-b border-border shadow-sm">
+    <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl shadow-2xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center space-x-4">
             <img 
               src="/lovable-uploads/0f31024b-b89b-49e8-b740-2ea425995c4e.png" 
               alt="SPIT Logo" 
-              className="w-14 h-14 object-contain"
+              className="w-14 h-14 object-contain animate-float"
             />
             <div>
-              <h1 className="text-xl font-bold text-foreground">SPIT Answer Sheet Portal</h1>
+              <h1 className="text-xl font-bold text-gradient tracking-tight">SPIT Answer Sheet Portal</h1>
               <p className="text-sm text-muted-foreground">Sardar Patel Institute of Technology</p>
             </div>
           </div>
@@ -49,16 +49,21 @@ const Header = () => {
             <ModeToggle />
             {user && (
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-academic rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-primary-foreground" />
+                <div className="flex items-center space-x-3 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-500 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+                    <User className="w-5 h-5 text-white" />
                   </div>
                   <div className="text-sm">
                     <p className="font-medium text-foreground">{getUserName()}</p>
                     <p className="text-muted-foreground capitalize">{getUserRole()} • {getUserDepartment()}</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleLogout}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleLogout}
+                  className="border-white/20 bg-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-white/30"
+                >
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </Button>
