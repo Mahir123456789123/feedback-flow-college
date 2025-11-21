@@ -110,19 +110,19 @@ const AdminDashboard = () => {
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage exams, teachers, and students</p>
+          <h1 className="text-4xl font-bold text-gradient tracking-tight">Admin Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Manage exams, teachers, and students</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setIsAddExamOpen(true)}>
+          <Button onClick={() => setIsAddExamOpen(true)} className="bg-gradient-to-r from-primary to-purple-500 border-0 shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.7)]">
             <Plus className="h-4 w-4 mr-2" />
             Add Exam
           </Button>
-          <Button onClick={() => setIsEnrollmentDialogOpen(true)} variant="outline">
+          <Button onClick={() => setIsEnrollmentDialogOpen(true)} variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm hover:bg-white/10">
             <Users className="h-4 w-4 mr-2" />
             Enroll Students
           </Button>
-          <Button onClick={() => setActiveTab('files')} variant="outline">
+          <Button onClick={() => setActiveTab('files')} variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm hover:bg-white/10">
             <Upload className="h-4 w-4 mr-2" />
             Manage Files
           </Button>
@@ -157,71 +157,71 @@ const AdminDashboard = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Stats Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+          {/* Bento Grid Stats Cards */}
+          <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-6">
+            <Card className="md:col-span-2 lg:col-span-2 stagger-item">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Departments</CardTitle>
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
+                <BookOpen className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{departments.length}</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-3xl font-bold text-gradient">{departments.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">
                   Active departments
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="md:col-span-2 lg:col-span-2 stagger-item">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
-                <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                <GraduationCap className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{teachers.length}</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-3xl font-bold text-gradient">{teachers.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">
                   Registered teachers
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="md:col-span-2 lg:col-span-1 stagger-item">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Subjects</CardTitle>
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Subjects</CardTitle>
+                <BookOpen className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{subjects.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  Available subjects
+                <div className="text-3xl font-bold text-gradient">{subjects.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Available
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="md:col-span-2 lg:col-span-1 stagger-item">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Exams</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Exams</CardTitle>
+                <Calendar className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{exams.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  Scheduled exams
+                <div className="text-3xl font-bold text-gradient">{exams.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Scheduled
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Recent Activity */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
+          {/* Bento Grid Recent Activity */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="md:col-span-2 lg:col-span-2 stagger-item">
               <CardHeader>
-                <CardTitle>Recent Exams</CardTitle>
+                <CardTitle className="text-lg">Recent Exams</CardTitle>
                 <CardDescription>Latest scheduled examinations</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 max-h-96 overflow-y-auto">
                 {exams.slice(0, 5).map((exam) => (
-                  <div key={exam.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={exam.id} className="flex items-center justify-between p-3 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
                     <div>
                       <p className="font-medium">{exam.name}</p>
                       <p className="text-sm text-muted-foreground">
@@ -231,7 +231,7 @@ const AdminDashboard = () => {
                         {new Date(exam.exam_date).toLocaleDateString()}
                       </p>
                     </div>
-                    <Badge variant={exam.status === 'scheduled' ? 'default' : 'secondary'}>
+                    <Badge variant={exam.status === 'scheduled' ? 'default' : 'secondary'} className="animate-pulse-glow">
                       {exam.status}
                     </Badge>
                   </div>
@@ -239,24 +239,24 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="stagger-item">
               <CardHeader>
-                <CardTitle>Teacher Assignments</CardTitle>
-                <CardDescription>Recent teacher-exam assignments</CardDescription>
+                <CardTitle className="text-lg">Teacher Assignments</CardTitle>
+                <CardDescription>Recent assignments</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 max-h-96 overflow-y-auto">
                 {exams.slice(0, 5).map((exam) => (
-                  <div key={exam.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={exam.id} className="flex items-center justify-between p-3 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
                     <div>
-                      <p className="font-medium">{exam.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Teachers: {exam.exam_teacher_assignments?.length || 0} assigned
+                      <p className="font-medium text-sm">{exam.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Teachers: {exam.exam_teacher_assignments?.length || 0}
                       </p>
                     </div>
-                    <div className="flex gap-2">
-                      {exam.exam_teacher_assignments?.map((assignment, index) => (
-                        <Badge key={index} variant="outline">
-                          {assignment.teacher?.name}
+                    <div className="flex gap-1 flex-wrap">
+                      {exam.exam_teacher_assignments?.slice(0, 2).map((assignment, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {assignment.teacher?.name.split(' ')[0]}
                         </Badge>
                       ))}
                     </div>

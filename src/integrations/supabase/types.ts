@@ -109,13 +109,6 @@ export type Database = {
             referencedRelation: "answer_sheet_questions"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fk_answer_sheet_annotations_answer_sheet"
-            columns: ["answer_sheet_id"]
-            isOneToOne: false
-            referencedRelation: "answer_sheets"
-            referencedColumns: ["id"]
-          },
         ]
       }
       answer_sheet_questions: {
@@ -168,13 +161,6 @@ export type Database = {
             columns: ["graded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_answer_sheet_questions_answer_sheet"
-            columns: ["answer_sheet_id"]
-            isOneToOne: false
-            referencedRelation: "answer_sheets"
             referencedColumns: ["id"]
           },
         ]
@@ -231,18 +217,11 @@ export type Database = {
             foreignKeyName: "answer_sheets_graded_by_fkey"
             columns: ["graded_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "teachers"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "answer_sheets_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_answer_sheets_student"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -308,20 +287,6 @@ export type Database = {
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fk_exam_enrollments_exam"
-            columns: ["exam_id"]
-            isOneToOne: false
-            referencedRelation: "exams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_exam_enrollments_student"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
         ]
       }
       exam_teacher_assignments: {
@@ -364,13 +329,6 @@ export type Database = {
             referencedRelation: "teachers"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fk_exam_teacher_assignments_teacher"
-            columns: ["teacher_id"]
-            isOneToOne: false
-            referencedRelation: "teachers"
-            referencedColumns: ["id"]
-          },
         ]
       }
       exams: {
@@ -389,6 +347,7 @@ export type Database = {
           status: string
           subject_id: string
           total_marks: number
+          total_questions: number | null
           updated_at: string
         }
         Insert: {
@@ -406,6 +365,7 @@ export type Database = {
           status?: string
           subject_id: string
           total_marks?: number
+          total_questions?: number | null
           updated_at?: string
         }
         Update: {
@@ -423,18 +383,12 @@ export type Database = {
           status?: string
           subject_id?: string
           total_marks?: number
+          total_questions?: number | null
           updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "exams_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_exams_subject"
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
@@ -493,13 +447,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_grievances_student"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "grievances_answer_sheet_id_fkey"
             columns: ["answer_sheet_id"]
             isOneToOne: false
@@ -510,14 +457,14 @@ export type Database = {
             foreignKeyName: "grievances_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "teachers"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "grievances_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -654,20 +601,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_subjects_department"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_subjects_semester"
-            columns: ["semester_id"]
-            isOneToOne: false
-            referencedRelation: "semesters"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "subjects_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
@@ -725,7 +658,7 @@ export type Database = {
     }
     Functions: {
       get_active_semester: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           academic_year: string
           id: string
@@ -733,7 +666,7 @@ export type Database = {
         }[]
       }
       get_current_user_details: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           additional_info: Json
           department: string
@@ -744,7 +677,7 @@ export type Database = {
         }[]
       }
       get_current_user_profile: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           department: string | null
@@ -755,13 +688,16 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_role: { Args: never; Returns: string }
       get_departments: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           code: string
           id: string

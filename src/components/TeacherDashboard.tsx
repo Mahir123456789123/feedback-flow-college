@@ -105,8 +105,8 @@ const TeacherDashboard = () => {
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Teacher Dashboard</h1>
-          <p className="text-muted-foreground">Grade papers and manage student grievances</p>
+          <h1 className="text-4xl font-bold text-gradient tracking-tight">Teacher Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Grade papers and manage student grievances</p>
         </div>
       </div>
 
@@ -131,77 +131,77 @@ const TeacherDashboard = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Stats Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+          {/* Bento Grid Stats Cards */}
+          <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-6">
+            <Card className="md:col-span-2 lg:col-span-2 stagger-item">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <h3 className="text-sm font-medium">Papers to Grade</h3>
-                <FileText className="h-4 w-4 text-muted-foreground" />
+                <FileText className="h-4 w-4 text-warning animate-pulse-glow" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{pendingPapers.length}</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-3xl font-bold text-gradient">{pendingPapers.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">
                   {pendingPapers.length === 1 ? 'paper' : 'papers'} pending review
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="md:col-span-1 lg:col-span-1 stagger-item">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <h3 className="text-sm font-medium">Completed</h3>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                <CheckCircle className="h-4 w-4 text-success" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{completedPapers.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  {completedPapers.length === 1 ? 'paper' : 'papers'} graded
+                <div className="text-3xl font-bold text-gradient">{completedPapers.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  graded
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="md:col-span-1 lg:col-span-2 stagger-item">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <h3 className="text-sm font-medium">Pending Grievances</h3>
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <MessageSquare className="h-4 w-4 text-destructive animate-pulse-glow" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{pendingGrievances.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  {pendingGrievances.length === 1 ? 'grievance' : 'grievances'} to review
+                <div className="text-3xl font-bold text-gradient">{pendingGrievances.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  to review
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="md:col-span-2 lg:col-span-1 stagger-item">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 className="text-sm font-medium">Assigned Exams</h3>
-                <Eye className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-medium">Exams</h3>
+                <Eye className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{teacherExams.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  exams assigned to you
+                <div className="text-3xl font-bold text-gradient">{teacherExams.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  assigned
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Recent Activity */}
+          {/* Bento Grid Recent Activity */}
           <div className="grid gap-6 md:grid-cols-3">
-            <Card>
+            <Card className="stagger-item">
               <CardHeader>
                 <h3 className="text-lg font-semibold">Assigned Exams</h3>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 max-h-96 overflow-y-auto">
                 {teacherExams.slice(0, 5).map((assignment) => (
-                  <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={assignment.id} className="flex items-center justify-between p-3 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
                     <div>
-                      <p className="font-medium">{assignment.exam?.name}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-sm">{assignment.exam?.name}</p>
+                      <p className="text-xs text-muted-foreground">
                         {assignment.exam?.subject?.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Questions: {assignment.assigned_questions?.join(', ')}
+                        Q: {assignment.assigned_questions?.join(', ')}
                       </p>
                     </div>
                     <Badge variant="outline">
@@ -215,23 +215,23 @@ const TeacherDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="stagger-item">
               <CardHeader>
                 <h3 className="text-lg font-semibold">Recent Papers to Grade</h3>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 max-h-96 overflow-y-auto">
                 {pendingPapers.slice(0, 5).map((paper) => (
-                  <div key={paper.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={paper.id} className="flex items-center justify-between p-3 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
                     <div>
-                      <p className="font-medium">{paper.student?.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {paper.exam?.subject?.name} - {paper.exam?.name}
+                      <p className="font-medium text-sm">{paper.student?.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {paper.exam?.subject?.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Uploaded: {new Date(paper.upload_date).toLocaleDateString()}
+                        {new Date(paper.upload_date).toLocaleDateString()}
                       </p>
                     </div>
-                    <Button size="sm" onClick={() => setActiveTab('grading')}>
+                    <Button size="sm" onClick={() => setActiveTab('grading')} className="bg-gradient-to-r from-primary to-purple-500 border-0">
                       Grade
                     </Button>
                   </div>
@@ -242,24 +242,24 @@ const TeacherDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="stagger-item">
               <CardHeader>
                 <h3 className="text-lg font-semibold">Recent Grievances</h3>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 max-h-96 overflow-y-auto">
                 {pendingGrievances.slice(0, 5).map((grievance) => (
-                  <div key={grievance.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={grievance.id} className="flex items-center justify-between p-3 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
                     <div>
-                      <p className="font-medium">{grievance.student?.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Question {grievance.question_number}
+                      <p className="font-medium text-sm">{grievance.student?.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Q{grievance.question_number}
                         {grievance.sub_question && ` (${grievance.sub_question})`}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(grievance.submitted_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <Button size="sm" onClick={() => setActiveTab('grievances')}>
+                    <Button size="sm" onClick={() => setActiveTab('grievances')} className="bg-gradient-to-r from-primary to-purple-500 border-0">
                       Review
                     </Button>
                   </div>

@@ -445,9 +445,9 @@ useEffect(() => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Paper Checking Interface</h2>
-        <Badge variant="secondary">{pendingPapers.length} papers pending</Badge>
+      <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-black/20 backdrop-blur-xl rounded-t-2xl">
+        <h2 className="text-2xl font-bold text-gradient">Paper Checking Interface</h2>
+        <Badge variant="warning" className="shadow-[0_0_20px_rgba(251,146,60,0.5)]">{pendingPapers.length} papers pending</Badge>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -498,87 +498,89 @@ useEffect(() => {
                 <CardHeader>
                   <div className="flex flex-col gap-4">
                     <div className="flex justify-between items-center">
-                      <CardTitle>Answer Sheet: {selectedPaper.student?.name}</CardTitle>
+                      <CardTitle className="text-gradient">Answer Sheet: {selectedPaper.student?.name}</CardTitle>
                     </div>
                     
-                    {/* Annotation Toolbar */}
-                    <div className="flex items-center gap-2 p-2 bg-muted rounded-lg flex-wrap">
+                    {/* Floating Annotation Toolbar */}
+                    <div className="flex items-center gap-2 p-3 bg-black/40 backdrop-blur-2xl rounded-full border border-white/20 shadow-[0_0_30px_rgba(0,0,0,0.5)] flex-wrap">
                       <Button
                         size="sm"
-                        variant={activeTool === 'pen' ? 'default' : 'outline'}
+                        variant={activeTool === 'pen' ? 'default' : 'ghost'}
                         onClick={() => setActiveTool('pen')}
                         title="Draw"
+                        className={activeTool === 'pen' ? 'bg-gradient-to-r from-primary to-purple-500 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : ''}
                       >
                         <Pen className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
-                        variant={activeTool === 'eraser' ? 'default' : 'outline'}
+                        variant={activeTool === 'eraser' ? 'default' : 'ghost'}
                         onClick={() => setActiveTool('eraser')}
                         title="Erase"
+                        className={activeTool === 'eraser' ? 'bg-gradient-to-r from-primary to-purple-500 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : ''}
                       >
                         <Eraser className="h-4 w-4" />
                       </Button>
                       
-                      <div className="w-px h-6 bg-border" />
+                      <div className="w-px h-6 bg-white/20" />
                       
-                      {/* Preset Annotations (Red Only) */}
+                      {/* Preset Annotations (Red with Neon Accents) */}
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => {
                           setActiveTool('tick');
                           addPresetAnnotation('tick');
                         }}
                         title="Add Tick Mark (Red)"
-                        className="text-red-600 hover:text-red-700"
+                        className="text-success hover:bg-success/20 hover:shadow-[0_0_15px_rgba(34,197,94,0.5)]"
                       >
                         <Check className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => {
                           setActiveTool('cross');
                           addPresetAnnotation('cross');
                         }}
                         title="Add Cross Mark (Red)"
-                        className="text-red-600 hover:text-red-700"
+                        className="text-destructive hover:bg-destructive/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)]"
                       >
                         <XIcon className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => {
                           setActiveTool('oval');
                           addPresetAnnotation('oval');
                         }}
                         title="Add Oval (Red)"
-                        className="text-red-600 hover:text-red-700"
+                        className="text-primary hover:bg-primary/20 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]"
                       >
                         <CircleIcon className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => {
                           setActiveTool('textbox');
                           addPresetAnnotation('textbox');
                         }}
                         title="Add Text Box (Red)"
-                        className="text-red-600 hover:text-red-700"
+                        className="text-warning hover:bg-warning/20 hover:shadow-[0_0_15px_rgba(251,146,60,0.5)]"
                       >
                         <Type className="h-4 w-4" />
                       </Button>
                       
-                      <div className="w-px h-6 bg-border" />
+                      <div className="w-px h-6 bg-white/20" />
                       
                       <Button
                         size="sm"
-                        variant="outline"
                         onClick={saveAnnotationsToDB}
-                        title="Save annotations"
+                        className="bg-gradient-to-r from-success to-green-600 shadow-[0_0_20px_rgba(34,197,94,0.5)] hover:shadow-[0_0_30px_rgba(34,197,94,0.7)]"
+                        title="Save Annotations"
                       >
                         <Save className="h-4 w-4 mr-1" />
                         Save
